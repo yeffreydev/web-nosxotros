@@ -107,6 +107,68 @@ h3 {
   color: #fff;
 }
 
+/* Botón hamburguesa + menú móvil */
+.navToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.navToggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.mobileMenu {
+  background: #0a2f1a;
+  border-bottom: 1px solid rgba(58, 170, 53, 0.35);
+  animation: menuDrop 0.16s ease;
+}
+@keyframes menuDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.mobileMenuInner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 20px 18px;
+}
+.mobileMenuLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  padding: 14px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.mobileMenuLink:hover {
+  color: #fff;
+}
+.mobileMenuLink svg {
+  opacity: 0.5;
+}
+
+@media (max-width: 860px) {
+  .headerNavDesktop {
+    display: none;
+  }
+  .navToggle {
+    display: inline-flex;
+  }
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;
@@ -195,6 +257,19 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+@media (max-width: 560px) {
+  .heroCtas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .heroCtas .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .sectionHead {
+    flex-wrap: wrap;
+  }
 }
 /* Hero split: ilustración + contenido (wireframe) */
 .heroSplit {

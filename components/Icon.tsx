@@ -4,6 +4,8 @@ import type { CSSProperties } from 'react';
 const PATHS: Record<string, string> = {
   sparkles: 'M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z',
   arrowRight: 'M5 12h14M13 6l6 6-6 6',
+  menu: 'M3 6h18M3 12h18M3 18h18',
+  close: 'M18 6 6 18M6 6l12 12',
   heart:
     'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.5 4.04 3 5.5l7 7z',
   users:

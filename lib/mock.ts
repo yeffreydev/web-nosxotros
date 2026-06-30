@@ -185,6 +185,24 @@ const SEED: MockSeed[] = [
   },
 ];
 
+// Fotos reales por tema (loremflickr sirve imágenes reales de Flickr).
+// lock = imagen estable por campaña (no cambia entre recargas).
+const IMG_KEYWORDS = [
+  'water,community',
+  'students,classroom',
+  'forest,reforestation',
+  'sewing,workshop',
+  'winter,blanket',
+  'dog,shelter',
+  'orchestra,children',
+  'computer,classroom',
+  'football,court',
+  'soup,kitchen',
+];
+
+const coverFor = (i: number) =>
+  `https://loremflickr.com/800/600/${IMG_KEYWORDS[i] ?? 'community'}?lock=${i + 1}`;
+
 const MOCK_UPDATES = [
   {
     id: 'u1',
@@ -215,7 +233,7 @@ export const MOCK_CAMPAIGNS: Campaign[] = SEED.map((c, i) => ({
   story: c.story,
   category: c.category,
   status: c.status,
-  coverPhoto: undefined,
+  coverPhoto: coverFor(i),
   goalAmount: c.goalAmount,
   raisedAmount: c.raisedAmount,
   volunteerSkills: c.volunteerSkills ?? [],

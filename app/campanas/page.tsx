@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCampaigns } from '@/lib/api';
-import { appLink } from '@/lib/config';
+import { newCampaignLink } from '@/lib/config';
 import { CampaignCard } from '@/components/CampaignCard';
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default async function CampaignsPage() {
           <div className="eyebrow">Crecimiento</div>
           <h1 className="sectionTitle">Campañas de crecimiento</h1>
         </div>
-        <a href={appLink('/registro?role=MANAGER')} className="btn btnGold">
+        <a href={newCampaignLink()} className="btn btnGold">
           Crear campaña
         </a>
       </div>

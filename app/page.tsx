@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getCampaigns } from '@/lib/api';
-import { appLink } from '@/lib/config';
+import { newCampaignLink } from '@/lib/config';
 import { formatSoles, CAMPAIGN_CATEGORY } from '@/lib/format';
 import { CampaignCard } from '@/components/CampaignCard';
 import { HeroIllustration } from '@/components/HeroIllustration';
@@ -41,7 +41,7 @@ export default async function HomePage() {
             Convierte tu idea en una campaña que <span className="heroAccentBrand">crece</span>
           </h1>
           <div className="heroCtas">
-            <a href={appLink('/registro?role=MANAGER')} className="btn btnGold btnLg">
+            <a href={newCampaignLink()} className="btn btnGold btnLg">
               <Icon name="rocket" size={18} /> Iniciar campaña
             </a>
             <Link href="/donar" className="btn btnBrand btnLg">
@@ -68,7 +68,7 @@ export default async function HomePage() {
         {active.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>
             Aún no hay campañas activas.{' '}
-            <a href={appLink('/registro?role=MANAGER')} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
+            <a href={newCampaignLink()} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
               Crea la primera.
             </a>
           </p>
@@ -156,7 +156,7 @@ export default async function HomePage() {
       <section className="ctaBand">
         <h2 className="ctaTitle">¿Tienes una idea que merece crecer?</h2>
         <p className="ctaSub">Crea tu campaña hoy. Es gratis y toma minutos.</p>
-        <a href={appLink('/registro?role=MANAGER')} className="btn btnGold btnLg">
+        <a href={newCampaignLink()} className="btn btnGold btnLg">
           <Icon name="rocket" size={18} /> Iniciar campaña
         </a>
       </section>

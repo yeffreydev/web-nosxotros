@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { appLink } from '@/lib/config';
+import { newCampaignLink } from '@/lib/config';
 import { Icon } from './Icon';
 import { useT, LanguageSwitcher } from '@/lib/i18n';
 
@@ -32,7 +32,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <LanguageSwitcher />
-          <a href={appLink('/registro?role=MANAGER')} className="btn btnGold">
+          <a href={newCampaignLink()} className="btn btnGold">
             <Icon name="sparkles" size={16} /> {t('nav.startCampaign')}
           </a>
         </nav>
@@ -63,7 +63,7 @@ export function SiteHeader() {
               <LanguageSwitcher block />
             </div>
             <a
-              href={appLink('/registro?role=MANAGER')}
+              href={newCampaignLink()}
               className="btn btnGold btnFull"
               style={{ marginTop: 8 }}
               onClick={() => setOpen(false)}

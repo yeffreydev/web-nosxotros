@@ -4,15 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { appLink } from '@/lib/config';
 import { Icon } from './Icon';
+import { useT, LanguageSwitcher } from '@/lib/i18n';
 
 const LINKS = [
-  { href: '/campanas', label: 'Campañas' },
-  { href: '/donar', label: 'Donar' },
-  { href: '/consultar', label: 'Mi donación' },
-  { href: '/reportar', label: 'Reportar emergencia' },
+  { href: '/campanas', key: 'nav.campaigns' },
+  { href: '/consultar', key: 'nav.myDonation' },
+  { href: '/reportar', key: 'nav.report' },
 ];
 
 export function SiteHeader() {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -27,11 +28,12 @@ export function SiteHeader() {
         <nav className="headerNav headerNavDesktop" aria-label="Principal">
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href}>
-              {l.label}
+              {t(l.key)}
             </Link>
           ))}
+          <LanguageSwitcher />
           <a href={appLink('/registro?role=MANAGER')} className="btn btnGold">
-            <Icon name="sparkles" size={16} /> Iniciar campaña
+            <Icon name="sparkles" size={16} /> {t('nav.startCampaign')}
           </a>
         </nav>
 
@@ -53,17 +55,20 @@ export function SiteHeader() {
           <nav className="mobileMenuInner container" aria-label="Móvil">
             {LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="mobileMenuLink" onClick={() => setOpen(false)}>
-                {l.label}
+                {t(l.key)}
                 <Icon name="arrowRight" size={18} />
               </Link>
             ))}
+            <div style={{ marginTop: 8 }}>
+              <LanguageSwitcher block />
+            </div>
             <a
               href={appLink('/registro?role=MANAGER')}
               className="btn btnGold btnFull"
               style={{ marginTop: 8 }}
               onClick={() => setOpen(false)}
             >
-              <Icon name="sparkles" size={16} /> Iniciar campaña
+              <Icon name="sparkles" size={16} /> {t('nav.startCampaign')}
             </a>
           </nav>
         </div>

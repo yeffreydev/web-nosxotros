@@ -1158,3 +1158,86 @@ textarea.control {
   background: var(--brand-50);
   color: var(--brand-700);
 }
+
+/* Selector de idioma propio (header público) */
+.langCombo {
+  position: relative;
+  display: inline-block;
+}
+.langComboBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.langComboBtn:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.55);
+}
+.langComboLabel { white-space: nowrap; }
+.langComboCaret { transition: transform 0.18s ease; opacity: 0.9; }
+.langComboCaretOpen { transform: rotate(180deg); }
+
+.langComboMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 168px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.16);
+  animation: langComboIn 0.14s ease;
+}
+@keyframes langComboIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.langComboItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-700, #1f2a24);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.langComboItem:hover { background: var(--surface-2); }
+.langComboItemActive {
+  color: var(--brand-700);
+  font-weight: 700;
+  background: var(--brand-50);
+}
+
+/* Variante bloque (menú móvil) */
+.langComboBlock { display: block; width: 100%; }
+.langComboBlock .langComboBtn {
+  width: 100%;
+  justify-content: space-between;
+  color: #111;
+  background: #fff;
+  border-color: rgba(0,0,0,0.15);
+}
+.langComboBlock .langComboBtn:hover { background: var(--surface-2); }
+.langComboBlock .langComboMenu { left: 0; right: 0; }

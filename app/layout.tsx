@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
+import { I18nProvider } from '@/lib/i18n';
 import { SITE_URL } from '@/lib/config';
 
 export const metadata: Metadata = {
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body>
+        <I18nProvider>
         <SiteHeader />
         <main className="container">{children}</main>
         <footer className="footer">
@@ -62,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </p>
           </div>
         </footer>
+        </I18nProvider>
       </body>
     </html>
   );

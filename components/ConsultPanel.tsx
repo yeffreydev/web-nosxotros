@@ -10,6 +10,7 @@ import {
   type DonationSummary,
 } from '@/lib/clientApi';
 import { formatSoles } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 const DONATION_STATUS: Record<string, string> = {
   PROMISED: 'Prometida',
@@ -22,7 +23,7 @@ const DONATION_STATUS: Record<string, string> = {
 const TYPE_LABEL: Record<string, string> = {
   MONEY: 'Dinero',
   GOODS: 'Especies',
-  TIME: 'Tiempo',
+  TIME: 'Voluntariado',
 };
 
 function fmtDate(iso: string): string {
@@ -41,10 +42,14 @@ function amountOf(d: { type: string; amount?: number | null; quantity?: number |
   return `${d.quantity ?? 0} horas`;
 }
 
+type Mode = 'code' | 'phone' | 'email';
+
 export function ConsultPanel({ initialCode }: { initialCode?: string }) {
-  const [mode, setMode] = useState<'code' | 'email'>(initialCode ? 'code' : 'code');
+  const t = useT();
+  const [mode, setMode] = useState<Mode>('code');
   const [code, setCode] = useState(initialCode ?? '');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tracked, setTracked] = useState<TrackedDonation | null>(null);
@@ -64,14 +69,21 @@ export function ConsultPanel({ initialCode }: { initialCode?: string }) {
     }
   }
 
-  async function byEmail() {
+  async function byContact(kind: 'email' | 'phone') {
     setError('');
     setTracked(null);
     setLoading(true);
     try {
-      const res = await lookupDonations(email.trim());
+      const res = await lookupDonations(
+        kind === 'email' ? { email: email.trim() } : { phone: phone.trim() },
+      );
       setList(res);
-      if (res.length === 0) setError('No se encontraron donaciones con ese correo.');
+      if (res.length === 0)
+        setError(
+          kind === 'email'
+            ? 'No se encontraron donaciones con ese correo.'
+            : 'No se encontraron donaciones con ese teléfono.',
+        );
     } catch (e) {
       setList(null);
       setError(e instanceof Error ? e.message : 'No se pudo consultar.');
@@ -92,29 +104,36 @@ export function ConsultPanel({ initialCode }: { initialCode?: string }) {
       </Link>
 
       <div className="formCard">
-        <h1 className="formTitle">Consultar mi donación</h1>
-        <p className="formLead">Sigue el recorrido de tu aporte con tu código o tu correo.</p>
+        <h1 className="formTitle">{t('consult.title')}</h1>
+        <p className="formLead">{t('consult.lead')}</p>
 
-        <div className="segmented" style={{ gridTemplateColumns: '1fr 1fr' }}>
+        <div className="segmented" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
           <button
             type="button"
             className={`segItem ${mode === 'code' ? 'segItemActive' : ''}`}
             onClick={() => setMode('code')}
           >
-            <Icon name="target" size={20} /> Por código
+            <Icon name="target" size={20} /> {t('consult.byCode')}
+          </button>
+          <button
+            type="button"
+            className={`segItem ${mode === 'phone' ? 'segItemActive' : ''}`}
+            onClick={() => setMode('phone')}
+          >
+            <Icon name="phone" size={20} /> {t('consult.byPhone')}
           </button>
           <button
             type="button"
             className={`segItem ${mode === 'email' ? 'segItemActive' : ''}`}
             onClick={() => setMode('email')}
           >
-            <Icon name="heart" size={20} /> Por correo
+            <Icon name="heart" size={20} /> {t('consult.byEmail')}
           </button>
         </div>
 
-        {mode === 'code' ? (
+        {mode === 'code' && (
           <div className="field">
-            <label className="label">Código de donación</label>
+            <label className="label">{t('consult.code')}</label>
             <input
               className="control"
               placeholder="Ej. clx123abc…"
@@ -123,26 +142,41 @@ export function ConsultPanel({ initialCode }: { initialCode?: string }) {
               onKeyDown={(e) => e.key === 'Enter' && code.trim() && byCode(code)}
             />
           </div>
-        ) : (
+        )}
+        {mode === 'phone' && (
           <div className="field">
-            <label className="label">Correo con el que donaste</label>
+            <label className="label">{t('consult.phone')}</label>
+            <input
+              className="control"
+              type="tel"
+              inputMode="tel"
+              placeholder="987654321"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && phone.trim() && byContact('phone')}
+            />
+          </div>
+        )}
+        {mode === 'email' && (
+          <div className="field">
+            <label className="label">{t('consult.email')}</label>
             <input
               className="control"
               type="email"
               placeholder="tu@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && email.trim() && byEmail()}
+              onKeyDown={(e) => e.key === 'Enter' && email.trim() && byContact('email')}
             />
           </div>
         )}
 
         <button
           type="button"
-          className={`btn btnBrand btnFull ${loading || (mode === 'code' ? !code.trim() : !email.trim()) ? 'btnDisabled' : ''}`}
-          onClick={() => (mode === 'code' ? byCode(code) : byEmail())}
+          className={`btn btnBrand btnFull ${loading || (mode === 'code' ? !code.trim() : mode === 'phone' ? !phone.trim() : !email.trim()) ? 'btnDisabled' : ''}`}
+          onClick={() => (mode === 'code' ? byCode(code) : byContact(mode === 'phone' ? 'phone' : 'email'))}
         >
-          <Icon name="target" size={18} /> {loading ? 'Buscando…' : 'Consultar'}
+          <Icon name="target" size={18} /> {loading ? t('consult.searching') : t('consult.cta')}
         </button>
 
         {error && (
@@ -197,7 +231,7 @@ export function ConsultPanel({ initialCode }: { initialCode?: string }) {
                   {(d.emergency || d.campaign) && <> · {d.emergency?.title ?? d.campaign?.title}</>}
                 </div>
                 <Link href={`/consultar?code=${encodeURIComponent(d.code)}`} className="metaInline" style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
-                  Ver recorrido <Icon name="arrowRight" size={14} />
+                  {t('consult.viewJourney')} <Icon name="arrowRight" size={14} />
                 </Link>
               </li>
             ))}

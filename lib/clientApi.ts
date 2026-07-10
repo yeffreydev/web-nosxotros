@@ -39,10 +39,12 @@ export interface CreateDonationBody {
   description?: string;
   emergencyId?: string;
   campaignId?: string;
+  centerId?: string;
   paymentMethod?: PaymentMethod;
   anonymous?: boolean;
   donorName?: string;
   donorEmail?: string;
+  donorPhone?: string;
 }
 
 export interface DonationResult {
@@ -112,8 +114,11 @@ export interface DonationSummary {
   paymentStatus?: string | null;
 }
 
-export function lookupDonations(email: string): Promise<DonationSummary[]> {
-  return request<DonationSummary[]>(`/donations/lookup?email=${encodeURIComponent(email)}`);
+export function lookupDonations(params: { email?: string; phone?: string }): Promise<DonationSummary[]> {
+  const q = params.email
+    ? `email=${encodeURIComponent(params.email)}`
+    : `phone=${encodeURIComponent(params.phone ?? '')}`;
+  return request<DonationSummary[]>(`/donations/lookup?${q}`);
 }
 
 // ───────── Emergencias (reporte anónimo) ─────────
@@ -176,4 +181,31 @@ export interface EmergencyLite {
 
 export function getActiveEmergencies(): Promise<EmergencyLite[]> {
   return request<EmergencyLite[]>('/emergencies?status=ACTIVE');
+}
+
+// Centros de acopio (para elegir destino al donar). Endpoint público GET.
+export interface CenterLite {
+  id: string;
+  name: string;
+  openingHours?: string | null;
+}
+
+export function getCenters(): Promise<CenterLite[]> {
+  return request<CenterLite[]>('/centers');
+}
+
+// Datos de pago de una campaña (Yape / cuenta) — backend real, público.
+export interface CampaignPayInfo {
+  id: string;
+  title: string;
+  yapeNumber?: string | null;
+  yapePhone?: string | null;
+  bankName?: string | null;
+  bankAccount?: string | null;
+  accountHolder?: string | null;
+  qrImageUrl?: string | null;
+}
+
+export function getCampaignPayInfo(idOrSlug: string): Promise<CampaignPayInfo> {
+  return request<CampaignPayInfo>(`/campaigns/${encodeURIComponent(idOrSlug)}`);
 }

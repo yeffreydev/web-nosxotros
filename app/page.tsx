@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getCampaigns } from '@/lib/api';
 import { newCampaignLink } from '@/lib/config';
 import { formatSoles, CAMPAIGN_CATEGORY } from '@/lib/format';
+import { assetUrl } from '@/lib/assets';
 import { CampaignCard } from '@/components/CampaignCard';
 import { HeroIllustration } from '@/components/HeroIllustration';
 import { Icon } from '@/components/Icon';
@@ -118,14 +119,15 @@ export default async function HomePage() {
             {gallery.map((c, i) => {
               const cat = CAMPAIGN_CATEGORY[c.category];
               const done = c.status === 'FUNDED' || c.progressPct >= 100;
+              const cover = assetUrl(c.coverPhoto);
               return (
                 <Link
                   key={c.id}
                   href={`/campanas/${c.slug}`}
                   className={`galleryTile ${i === 0 ? 'galleryTileWide' : ''}`}
-                  style={c.coverPhoto ? { backgroundImage: `url(${c.coverPhoto})` } : undefined}
+                  style={cover ? { backgroundImage: `url(${cover})` } : undefined}
                 >
-                  {!c.coverPhoto && (
+                  {!cover && (
                     <span className="galleryWatermark" aria-hidden="true">
                       <Icon name={cat.icon} size={64} strokeWidth={1.3} />
                     </span>

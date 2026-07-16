@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getCampaign } from '@/lib/api';
+import { getCampaign, getCampaigns } from '@/lib/api';
+import { assetUrl } from '@/lib/assets';
+import { SITE_URL } from '@/lib/config';
 import {
   CAMPAIGN_CATEGORY,
   CAMPAIGN_STATUS,
@@ -14,7 +16,17 @@ import { Icon } from '@/components/Icon';
 
 type Params = { params: { slug: string } };
 
+// El backend revalida esta página al instante al publicar o editar
+// (POST /api/revalidate). Este ISR es la red de seguridad si esa llamada se pierde.
 export const revalidate = 60;
+
+// Las campañas activas se prerenderizan en el build: el buscador y el primer
+// visitante reciben HTML ya hecho, sin esperar el render bajo demanda. Las que
+// no estén aquí (nuevas) se generan en su primera visita y quedan cacheadas.
+export async function generateStaticParams() {
+  const campaigns = (await getCampaigns()) ?? [];
+  return campaigns.map((c) => ({ slug: c.slug }));
+}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = await getCampaign(params.slug);
@@ -24,21 +36,26 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     c.goalAmount != null
       ? `${c.summary} · ${formatSoles(c.raisedAmount)} recaudados (${pct}%) de ${formatSoles(c.goalAmount)}.`
       : `${c.summary} · ${formatSoles(c.raisedAmount)} recaudados.`;
+  // La portada va absoluta y hacia la API real: WhatsApp y Google leen la imagen
+  // desde fuera, y una URL a localhost no les sirve para nada.
+  const cover = assetUrl(c.coverPhoto);
   return {
     title: c.title,
     description: desc,
+    keywords: [c.title, CAMPAIGN_CATEGORY[c.category].label, 'donar', 'campaña', c.district ?? 'Arequipa'],
     alternates: { canonical: `/campanas/${c.slug}` },
     openGraph: {
       type: 'article',
       title: c.title,
       description: desc,
       url: `/campanas/${c.slug}`,
-      images: c.coverPhoto ? [{ url: c.coverPhoto }] : undefined,
+      images: cover ? [{ url: cover, alt: c.title }] : undefined,
     },
     twitter: {
-      card: c.coverPhoto ? 'summary_large_image' : 'summary',
+      card: cover ? 'summary_large_image' : 'summary',
       title: c.title,
       description: desc,
+      images: cover ? [cover] : undefined,
     },
   };
 }
@@ -65,6 +82,8 @@ export default async function CampaignDetailPage({ params }: Params) {
   const funded = c.progressPct >= 100 || c.status === 'FUNDED';
   const dleft = daysLeft(c.deadline);
   const closed = ['COMPLETED', 'CANCELLED', 'PAUSED'].includes(c.status);
+  const cover = assetUrl(c.coverPhoto);
+  const url = `${SITE_URL}/campanas/${c.slug}`;
 
   // JSON-LD para resultados enriquecidos (SEO).
   const jsonLd = {
@@ -72,7 +91,23 @@ export default async function CampaignDetailPage({ params }: Params) {
     '@type': 'DonateAction',
     name: c.title,
     description: c.summary,
+    url,
+    ...(cover ? { image: cover } : {}),
     ...(c.organizer ? { agent: { '@type': 'Person', name: c.organizer.fullName } } : {}),
+    ...(c.deadline ? { endTime: c.deadline } : {}),
+    recipient: {
+      '@type': 'Organization',
+      name: 'NOSXOTROS',
+      url: SITE_URL,
+    },
+    ...(c.goalAmount != null
+      ? {
+          // El progreso declarado ayuda a que el resultado muestre el estado real.
+          purpose: c.summary,
+          price: c.raisedAmount,
+          priceCurrency: c.currency || 'PEN',
+        }
+      : {}),
   };
 
   return (
@@ -85,11 +120,8 @@ export default async function CampaignDetailPage({ params }: Params) {
         </a>
       </p>
 
-      <div
-        className="detailHero"
-        style={c.coverPhoto ? { backgroundImage: `url(${c.coverPhoto})` } : undefined}
-      >
-        {!c.coverPhoto && <Icon name={cat.icon} size={72} strokeWidth={1.4} />}
+      <div className="detailHero" style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
+        {!cover && <Icon name={cat.icon} size={72} strokeWidth={1.4} />}
       </div>
 
       <div className="badges">

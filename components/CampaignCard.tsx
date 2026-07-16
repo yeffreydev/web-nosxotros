@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Campaign } from '@/lib/types';
 import { CAMPAIGN_CATEGORY, CAMPAIGN_STATUS, formatSoles, formatNumber, daysLeft } from '@/lib/format';
+import { assetUrl } from '@/lib/assets';
 import { Progress } from './Progress';
 import { Icon } from './Icon';
 
@@ -14,14 +15,12 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const st = CAMPAIGN_STATUS[campaign.status];
   const funded = campaign.progressPct >= 100 || campaign.status === 'FUNDED';
   const dleft = daysLeft(campaign.deadline);
+  const cover = assetUrl(campaign.coverPhoto);
 
   return (
     <Link href={`/campanas/${campaign.slug}`} className="card">
-      <div
-        className="cardCover"
-        style={campaign.coverPhoto ? { backgroundImage: `url(${campaign.coverPhoto})` } : undefined}
-      >
-        {!campaign.coverPhoto && <Icon name={cat.icon} size={40} strokeWidth={1.6} />}
+      <div className="cardCover" style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
+        {!cover && <Icon name={cat.icon} size={40} strokeWidth={1.6} />}
         <span className="badge badgeOnCover badgeGlass" style={{ left: 10 }}>
           <Icon name={cat.icon} size={13} /> {cat.label}
         </span>

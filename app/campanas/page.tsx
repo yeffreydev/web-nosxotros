@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/campanas' },
 };
 
+// Render en cada request: la lista siempre trae lo que hay publicado ahora.
+export const dynamic = 'force-dynamic';
+
 export default async function CampaignsPage() {
   const campaigns = (await getCampaigns()) ?? [];
 

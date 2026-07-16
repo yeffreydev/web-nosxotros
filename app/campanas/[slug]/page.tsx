@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getCampaign, getCampaigns } from '@/lib/api';
+import { getCampaign } from '@/lib/api';
 import { assetUrl } from '@/lib/assets';
 import { SITE_URL } from '@/lib/config';
 import {
@@ -16,17 +16,8 @@ import { Icon } from '@/components/Icon';
 
 type Params = { params: { slug: string } };
 
-// El backend revalida esta página al instante al publicar o editar
-// (POST /api/revalidate). Este ISR es la red de seguridad si esa llamada se pierde.
-export const revalidate = 60;
-
-// Las campañas activas se prerenderizan en el build: el buscador y el primer
-// visitante reciben HTML ya hecho, sin esperar el render bajo demanda. Las que
-// no estén aquí (nuevas) se generan en su primera visita y quedan cacheadas.
-export async function generateStaticParams() {
-  const campaigns = (await getCampaigns()) ?? [];
-  return campaigns.map((c) => ({ slug: c.slug }));
-}
+// Render en cada request: una campaña publicada o editada sale al recargar.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = await getCampaign(params.slug);

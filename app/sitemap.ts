@@ -2,7 +2,8 @@ import type { MetadataRoute } from 'next';
 import { getCampaigns } from '@/lib/api';
 import { SITE_URL } from '@/lib/config';
 
-export const revalidate = 300;
+// Dinámico, como las páginas: se arma con las campañas del momento.
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const campaigns = (await getCampaigns()) ?? [];

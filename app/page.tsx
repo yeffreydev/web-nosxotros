@@ -16,6 +16,9 @@ const GUIDE = [
   { icon: 'trophy', title: 'Alcanza tu meta', body: 'Sigue el progreso con trazabilidad total.' },
 ];
 
+// Render en cada request: las campañas del home salen al recargar.
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const campaigns = (await getCampaigns()) ?? [];
   const active = campaigns.filter((c) => c.status === 'ACTIVE' || c.status === 'FUNDED');

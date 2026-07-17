@@ -32,6 +32,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export type DonationType = 'MONEY' | 'GOODS' | 'TIME';
 export type PaymentMethod = 'YAPE' | 'PLIN' | 'CARD' | 'CASH' | 'IN_KIND';
 
+// Espejo del enum VolunteerSkill del backend.
+export type VolunteerSkill =
+  | 'MEDIC'
+  | 'LOGISTICS'
+  | 'DRIVER'
+  | 'COOK'
+  | 'PSYCHOLOGY'
+  | 'CONSTRUCTION'
+  | 'COMMS'
+  | 'GENERAL';
+
+export type Weekday = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+
 export interface CreateDonationBody {
   type: DonationType;
   amount?: number;
@@ -45,6 +58,12 @@ export interface CreateDonationBody {
   donorName?: string;
   donorEmail?: string;
   donorPhone?: string;
+  // Voluntariado (type = TIME) a una campaña: inscriben al donante en sus
+  // voluntarios, para que el organizador pueda contactarlo y organizarlo.
+  volunteerSkills?: VolunteerSkill[];
+  volunteerDays?: Weekday[];
+  volunteerStartTime?: string; // "08:00"
+  volunteerEndTime?: string; // "13:00"
 }
 
 export interface DonationResult {

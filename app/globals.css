@@ -1241,3 +1241,58 @@ textarea.control {
 }
 .langComboBlock .langComboBtn:hover { background: var(--surface-2); }
 .langComboBlock .langComboMenu { left: 0; right: 0; }
+
+/* ───────── Voluntariado: elegir área y días ───────── */
+
+.fieldHint {
+  margin: 4px 0 8px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.fieldError {
+  margin: -8px 0 16px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--danger, #b42318);
+}
+.chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chipOn {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+/* Días de la semana: 7 objetivos táctiles iguales, siempre en una fila. */
+.dayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.dayChip {
+  min-height: 48px;
+  border-radius: var(--r-md, 10px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.dayChip:hover {
+  border-color: var(--brand-300);
+}
+.dayChipOn {
+  border-color: var(--brand-500);
+  background: var(--brand-500);
+  color: #fff;
+}
+.dayChip:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}

@@ -15,6 +15,8 @@ import {
   type EmergencyLite,
   type CenterLite,
   type CampaignPayInfo,
+  type VolunteerSkill,
+  type Weekday,
 } from '@/lib/clientApi';
 import { formatSoles } from '@/lib/format';
 import { useT } from '@/lib/i18n';
@@ -33,16 +35,38 @@ const TYPES: { value: DonationType; label: string; icon: string; hint: string }[
 
 const AMOUNTS = [20, 50, 100, 200];
 
-const VOL_SKILLS = [
-  'Logística',
-  'Salud / Médico',
-  'Cocina',
-  'Conductor',
-  'Psicología',
-  'Construcción',
-  'Comunicaciones',
-  'General',
+// Habilidades tal como las entiende el backend (enum VolunteerSkill). Antes se
+// mandaba la etiqueta en español dentro del texto libre y el organizador no podía
+// filtrar por área.
+const VOL_SKILLS: { value: VolunteerSkill; label: string }[] = [
+  { value: 'LOGISTICS', label: 'Logística' },
+  { value: 'MEDIC', label: 'Salud / Médico' },
+  { value: 'COOK', label: 'Cocina' },
+  { value: 'DRIVER', label: 'Conductor' },
+  { value: 'PSYCHOLOGY', label: 'Psicología' },
+  { value: 'CONSTRUCTION', label: 'Construcción' },
+  { value: 'COMMS', label: 'Comunicaciones' },
+  { value: 'GENERAL', label: 'General' },
 ];
+
+// Semana peruana: arranca en lunes.
+const VOL_DAYS: { value: Weekday; short: string; label: string }[] = [
+  { value: 'MON', short: 'L', label: 'Lunes' },
+  { value: 'TUE', short: 'M', label: 'Martes' },
+  { value: 'WED', short: 'M', label: 'Miércoles' },
+  { value: 'THU', short: 'J', label: 'Jueves' },
+  { value: 'FRI', short: 'V', label: 'Viernes' },
+  { value: 'SAT', short: 'S', label: 'Sábado' },
+  { value: 'SUN', short: 'D', label: 'Domingo' },
+];
+
+// Medias horas de 05:00 a 22:00: cubre la jornada real sin volverse una lista infinita.
+const TIME_OPTIONS = Array.from({ length: (22 - 5) * 2 + 1 }, (_, i) => {
+  const minutes = 5 * 60 + i * 30;
+  const h = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const m = String(minutes % 60).padStart(2, '0');
+  return `${h}:${m}`;
+});
 
 // Datos de pago simulados (demo). Se muestran cuando la campaña no trae los suyos.
 const SIM_PAY = {
@@ -110,9 +134,10 @@ export function DonateForm({
   const [donorEmail, setDonorEmail] = useState('');
   const [donorPhone, setDonorPhone] = useState('');
   // Voluntariado
-  const [volSkill, setVolSkill] = useState('');
-  const [volDays, setVolDays] = useState('');
-  const [volHours, setVolHours] = useState('');
+  const [volSkills, setVolSkills] = useState<VolunteerSkill[]>([]);
+  const [volDays, setVolDays] = useState<Weekday[]>([]);
+  const [volStart, setVolStart] = useState('08:00');
+  const [volEnd, setVolEnd] = useState('13:00');
 
   const [emergencies, setEmergencies] = useState<EmergencyLite[]>([]);
   const [centers, setCenters] = useState<CenterLite[]>([]);
@@ -134,6 +159,9 @@ export function DonateForm({
       .catch(() => setEmergencies([]));
   }, [isCampaign, campaignId]);
 
+  // El horario debe avanzar: "de 14:00 a 09:00" no significa nada.
+  const rangeValid = volStart < volEnd;
+
   const detailsValid =
     type === 'MONEY'
       ? typeof amount === 'number' && amount > 0
@@ -143,36 +171,62 @@ export function DonateForm({
           typeof quantity === 'number' &&
           quantity > 0 &&
           donorPhone.trim().length >= 6 &&
-          volSkill.trim().length > 0 &&
-          (volDays.trim().length > 0 || volHours.trim().length > 0);
+          donorName.trim().length > 0 &&
+          volSkills.length > 0 &&
+          volDays.length > 0 &&
+          rangeValid;
+
+  // Lo primero que falta para poder enviar, en orden de aparición del formulario.
+  const missingHint = (() => {
+    if (detailsValid || submitting) return '';
+    if (type === 'MONEY') return 'Elige o escribe un monto para continuar.';
+    if (type === 'GOODS') {
+      if (!(typeof quantity === 'number' && quantity > 0)) return 'Indica cuántas unidades vas a donar.';
+      if (!description.trim()) return 'Describe qué vas a donar.';
+      return '';
+    }
+    if (volSkills.length === 0) return 'Elige al menos un área en la que puedes ayudar.';
+    if (volDays.length === 0) return 'Elige al menos un día disponible.';
+    if (!rangeValid) return 'La hora de fin debe ser posterior a la de inicio.';
+    if (!(typeof quantity === 'number' && quantity > 0)) return 'Indica cuántas horas por semana puedes apoyar.';
+    if (donorPhone.trim().length < 6) return 'Escribe un teléfono de contacto.';
+    if (!donorName.trim()) return 'Escribe tu nombre para que el organizador sepa quién eres.';
+    return '';
+  })();
+
+  const toggleDay = (d: Weekday) =>
+    setVolDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  const toggleSkill = (s: VolunteerSkill) =>
+    setVolSkills((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
   async function submit() {
     setError('');
     setSubmitting(true);
     try {
-      // En voluntariado, la descripción resume área + disponibilidad.
-      const volDesc =
-        type === 'TIME'
-          ? [
-              volSkill && `Área: ${volSkill}`,
-              volDays && `Días: ${volDays}`,
-              volHours && `Horario: ${volHours}`,
-              description && `Nota: ${description}`,
-            ]
-              .filter(Boolean)
-              .join(' · ')
-          : description;
+      // Voluntariado: el área y la disponibilidad van en campos propios, así el
+      // backend puede inscribirlo en la campaña. La descripción queda para su
+      // comentario. Y nunca es anónimo: el organizador tiene que poder contactarlo.
+      const isVol = type === 'TIME';
+      const hideIdentity = anonymous && !isVol;
 
       const body: CreateDonationBody = {
         type,
         campaignId: campaignId || undefined,
         emergencyId: !isCampaign && emergencyId ? emergencyId : undefined,
         centerId: !isCampaign && centerId ? centerId : undefined,
-        description: volDesc || undefined,
+        description: description.trim() || undefined,
         donorPhone: donorPhone || undefined,
-        anonymous,
-        donorName: !anonymous ? donorName || undefined : undefined,
-        donorEmail: !anonymous ? donorEmail || undefined : undefined,
+        anonymous: hideIdentity,
+        donorName: !hideIdentity ? donorName || undefined : undefined,
+        donorEmail: !hideIdentity ? donorEmail || undefined : undefined,
+        ...(isVol
+          ? {
+              volunteerSkills: volSkills,
+              volunteerDays: volDays,
+              volunteerStartTime: volStart,
+              volunteerEndTime: volEnd,
+            }
+          : {}),
       };
       if (type === 'MONEY') {
         body.amount = typeof amount === 'number' ? amount : 0;
@@ -322,19 +376,85 @@ export function DonateForm({
 
         {type === 'TIME' && (
           <>
+            <div className="field">
+              <label className="label">¿En qué puedes ayudar?</label>
+              <p className="fieldHint">Elige todas las que apliquen.</p>
+              <div className="chipGrid">
+                {VOL_SKILLS.map((sk) => {
+                  const on = volSkills.includes(sk.value);
+                  return (
+                    <button
+                      key={sk.value}
+                      type="button"
+                      className={`chip ${on ? 'chipOn' : ''}`}
+                      aria-pressed={on}
+                      onClick={() => toggleSkill(sk.value)}
+                    >
+                      {on && <Icon name="check" size={14} />} {sk.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="label">¿Qué días puedes?</label>
+              <div className="dayRow" role="group" aria-label="Días disponibles">
+                {VOL_DAYS.map((d) => {
+                  const on = volDays.includes(d.value);
+                  return (
+                    <button
+                      key={d.value}
+                      type="button"
+                      className={`dayChip ${on ? 'dayChipOn' : ''}`}
+                      aria-pressed={on}
+                      aria-label={d.label}
+                      title={d.label}
+                      onClick={() => toggleDay(d.value)}
+                    >
+                      {d.short}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="fieldHint">
+                {volDays.length === 0
+                  ? 'Toca los días en los que puedes apoyar.'
+                  : `${volDays.length} ${volDays.length === 1 ? 'día' : 'días'}: ${VOL_DAYS.filter((d) => volDays.includes(d.value))
+                      .map((d) => d.label)
+                      .join(', ')}`}
+              </p>
+            </div>
+
             <div className="fieldRow" style={{ marginBottom: 16 }}>
               <div>
-                <label className="label">Área en la que ayudas</label>
-                <select className="control" value={volSkill} onChange={(e) => setVolSkill(e.target.value)}>
-                  <option value="">Elige un área…</option>
-                  {VOL_SKILLS.map((sk) => (
-                    <option key={sk} value={sk}>{sk}</option>
+                <label className="label" htmlFor="volStart">Desde</label>
+                <select id="volStart" className="control" value={volStart} onChange={(e) => setVolStart(e.target.value)}>
+                  {TIME_OPTIONS.map((h) => (
+                    <option key={h} value={h}>{h}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="label">Horas por semana</label>
+                <label className="label" htmlFor="volEnd">Hasta</label>
+                <select id="volEnd" className="control" value={volEnd} onChange={(e) => setVolEnd(e.target.value)}>
+                  {TIME_OPTIONS.map((h) => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {!rangeValid && (
+              <p className="fieldError" role="alert">
+                La hora de fin debe ser posterior a la de inicio.
+              </p>
+            )}
+
+            <div className="fieldRow" style={{ marginBottom: 16 }}>
+              <div>
+                <label className="label" htmlFor="volHours">Horas por semana</label>
                 <input
+                  id="volHours"
                   className="control"
                   type="number"
                   min={1}
@@ -342,41 +462,23 @@ export function DonateForm({
                   onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                 />
               </div>
-            </div>
-            <div className="fieldRow" style={{ marginBottom: 16 }}>
               <div>
-                <label className="label">Días disponibles</label>
+                <label className="label" htmlFor="volPhone">Teléfono (obligatorio)</label>
                 <input
+                  id="volPhone"
                   className="control"
-                  placeholder="Ej. Lun, Mié, Sáb"
-                  value={volDays}
-                  onChange={(e) => setVolDays(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Horario disponible</label>
-                <input
-                  className="control"
-                  placeholder="Ej. 9:00–13:00"
-                  value={volHours}
-                  onChange={(e) => setVolHours(e.target.value)}
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="987654321"
+                  value={donorPhone}
+                  onChange={(e) => setDonorPhone(e.target.value)}
                 />
               </div>
             </div>
             <div className="field">
-              <label className="label">Teléfono (obligatorio)</label>
+              <label className="label" htmlFor="volNote">Comentario (opcional)</label>
               <input
-                className="control"
-                type="tel"
-                inputMode="tel"
-                placeholder="987654321"
-                value={donorPhone}
-                onChange={(e) => setDonorPhone(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label className="label">Comentario (opcional)</label>
-              <input
+                id="volNote"
                 className="control"
                 placeholder="Experiencia, movilidad propia, etc."
                 value={description}
@@ -453,24 +555,36 @@ export function DonateForm({
           );
         })()}
 
-        {/* Donante */}
-        <label className="checkRow">
-          <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
-          Donar de forma anónima
-        </label>
+        {/* Donante. En voluntariado no hay anonimato: sin nombre ni correo el
+            organizador no puede coordinar con quien se ofrece. */}
+        {type !== 'TIME' && (
+          <label className="checkRow">
+            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
+            Donar de forma anónima
+          </label>
+        )}
 
-        {!anonymous && (
+        {(type === 'TIME' || !anonymous) && (
           <div className="fieldRow" style={{ marginBottom: 16 }}>
             <div>
-              <label className="label">Nombre (opcional)</label>
-              <input className="control" value={donorName} onChange={(e) => setDonorName(e.target.value)} />
+              <label className="label" htmlFor="donorName">
+                {type === 'TIME' ? 'Nombre (obligatorio)' : 'Nombre (opcional)'}
+              </label>
+              <input
+                id="donorName"
+                className="control"
+                placeholder={type === 'TIME' ? '¿Cómo te llamas?' : undefined}
+                value={donorName}
+                onChange={(e) => setDonorName(e.target.value)}
+              />
             </div>
             <div>
-              <label className="label">Correo (opcional)</label>
+              <label className="label" htmlFor="donorEmail">Correo (opcional)</label>
               <input
+                id="donorEmail"
                 className="control"
                 type="email"
-                placeholder="Para consultar tus donaciones"
+                placeholder={type === 'TIME' ? 'Para que te contacten' : 'Para consultar tus donaciones'}
                 value={donorEmail}
                 onChange={(e) => setDonorEmail(e.target.value)}
               />
@@ -478,8 +592,19 @@ export function DonateForm({
           </div>
         )}
 
+        {/* Qué falta. Un botón apagado sin explicación deja al donante adivinando. */}
+        {missingHint && (
+          <p className="fieldHint" style={{ marginBottom: 8 }}>
+            {missingHint}
+          </p>
+        )}
+
         <button
           type="button"
+          // `disabled` de verdad, no solo la clase: btnDisabled apaga el ratón con
+          // pointer-events, pero con el teclado se seguía pudiendo enviar el
+          // formulario incompleto.
+          disabled={!detailsValid || submitting}
           className={`btn btnGold btnLg btnFull ${!detailsValid || submitting ? 'btnDisabled' : ''}`}
           onClick={submit}
         >

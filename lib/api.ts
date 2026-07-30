@@ -1,4 +1,4 @@
-import type { Campaign } from './types';
+import type { Campaign, CampaignGoals, CampaignOperations } from './types';
 import { API_URL } from './config';
 
 // Datos reales del backend NestJS (endpoints públicos de /campaigns).
@@ -33,4 +33,17 @@ export async function getCampaigns(params?: {
 
 export async function getCampaign(slug: string): Promise<Campaign | null> {
   return apiGet<Campaign>(`/campaigns/${encodeURIComponent(slug)}`);
+}
+
+/**
+ * Metas de la campaña: dinero, voluntarios y especies ("faltan 150 frazadas").
+ * El progreso en especie lo calcula el backend contra el almacén de los centros.
+ */
+export async function getCampaignGoals(slug: string): Promise<CampaignGoals | null> {
+  return apiGet<CampaignGoals>(`/campaigns/${encodeURIComponent(slug)}/goals`);
+}
+
+/** Zonas y centros de acopio de la campaña: a dónde llevar lo que se dona. */
+export async function getCampaignOperations(slug: string): Promise<CampaignOperations | null> {
+  return apiGet<CampaignOperations>(`/campaigns/${encodeURIComponent(slug)}/operations`);
 }

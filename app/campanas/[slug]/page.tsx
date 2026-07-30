@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getCampaign } from '@/lib/api';
+import { getCampaign, getCampaignGoals, getCampaignOperations } from '@/lib/api';
 import { assetUrl } from '@/lib/assets';
 import { SITE_URL } from '@/lib/config';
 import {
@@ -67,6 +67,18 @@ const VOL_SKILL_LABEL: Record<string, string> = {
 export default async function CampaignDetailPage({ params }: Params) {
   const c = await getCampaign(params.slug);
   if (!c) notFound();
+
+  // Metas y centros son extra: si el backend no los da, la página sigue igual.
+  const [goals, ops] = await Promise.all([
+    getCampaignGoals(params.slug),
+    getCampaignOperations(params.slug),
+  ]);
+  // Lo que todavía falta, primero. Lo bloqueado ("no traer más") se muestra aparte.
+  const needs = (goals?.items ?? []).filter((n) => n.targetQty > 0);
+  const pending = needs.filter((n) => !n.isBlocked && n.remaining > 0);
+  const covered = needs.filter((n) => !n.isBlocked && n.remaining === 0);
+  const blocked = needs.filter((n) => n.isBlocked);
+  const centers = (ops?.centers ?? []).filter((ctr) => ctr.status !== 'CLOSED');
 
   const cat = CAMPAIGN_CATEGORY[c.category];
   const st = CAMPAIGN_STATUS[c.status];
@@ -168,17 +180,112 @@ export default async function CampaignDetailPage({ params }: Params) {
         </p>
       )}
 
-      {c.volunteerSkills && c.volunteerSkills.length > 0 && (
+      {(c.volunteerSkills?.length || goals?.volunteers.goal) && (
         <div className="block">
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10, fontWeight: 700 }}>
             <Icon name="users" size={18} /> Voluntarios que busca
           </div>
-          <div className="badges">
-            {c.volunteerSkills.map((sk) => (
-              <span key={sk} className="badge">{VOL_SKILL_LABEL[sk] ?? sk}</span>
-            ))}
-          </div>
+          {goals?.volunteers.goal ? (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.9375rem', marginBottom: 4 }}>
+                <span>{goals.volunteers.enrolled} de {goals.volunteers.goal} personas</span>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  faltan {Math.max(0, goals.volunteers.goal - goals.volunteers.enrolled)}
+                </span>
+              </div>
+              <Progress pct={goals.volunteers.pct} />
+            </div>
+          ) : null}
+          {c.volunteerSkills && c.volunteerSkills.length > 0 && (
+            <div className="badges">
+              {c.volunteerSkills.map((sk) => (
+                <span key={sk} className="badge">{VOL_SKILL_LABEL[sk] ?? sk}</span>
+              ))}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Qué se necesita en especie: lo concreto que puede traer el donante. */}
+      {needs.length > 0 && (
+        <>
+          <h2 style={{ fontSize: '1.375rem', marginTop: 32 }}>Qué se necesita</h2>
+          <div className="block">
+            {[...pending, ...covered].map((n) => (
+              <div key={n.id} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '.9375rem', marginBottom: 4 }}>
+                  <span style={{ fontWeight: 700 }}>
+                    {n.category?.icon ? `${n.category.icon} ` : ''}{n.title}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {n.remaining > 0
+                      ? `faltan ${formatNumber(n.remaining)} ${n.unit}`
+                      : `completo · ${formatNumber(n.targetQty)} ${n.unit}`}
+                  </span>
+                </div>
+                <Progress pct={n.pct} gold={n.remaining === 0} />
+              </div>
+            ))}
+            {blocked.length > 0 && (
+              <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '.875rem' }}>
+                Por ahora no hace falta traer: {blocked.map((n) => n.title).join(', ')}.
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Centros de acopio: foto para reconocer el local y enlace para la ruta. */}
+      {centers.length > 0 && (
+        <>
+          <h2 style={{ fontSize: '1.375rem', marginTop: 32 }}>Dónde llevar tu donación</h2>
+          <div className="block">
+            {centers.map((ctr) => {
+              const photo = assetUrl(ctr.photoUrl);
+              return (
+                <div key={ctr.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16 }}>
+                  {photo && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={photo}
+                      alt={`Centro de acopio ${ctr.name}`}
+                      width={96}
+                      height={96}
+                      style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 12, flexShrink: 0 }}
+                    />
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <strong>{ctr.name}</strong>
+                    {ctr.status === 'NEAR_FULL' && <span className="badge badgeGold" style={{ marginLeft: 6 }}>Casi lleno</span>}
+                    {ctr.status === 'FULL' && <span className="badge" style={{ marginLeft: 6 }}>Lleno</span>}
+                    {ctr.address && <div style={{ color: 'var(--text-muted)' }}>{ctr.address}</div>}
+                    {ctr.reference && <div style={{ color: 'var(--text-muted)', fontSize: '.875rem' }}>{ctr.reference}</div>}
+                    {ctr.openingHours && (
+                      <div style={{ fontSize: '.875rem' }}>
+                        <Icon name="clock" size={13} /> {ctr.openingHours}
+                      </div>
+                    )}
+                    {ctr.contactPhone && (
+                      <div style={{ fontSize: '.875rem' }}>
+                        <a href={`tel:${ctr.contactPhone}`}>{ctr.contactPhone}</a>
+                      </div>
+                    )}
+                    {ctr.mapUrl && (
+                      <a
+                        href={ctr.mapUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        style={{ display: 'inline-flex', gap: 4, alignItems: 'center', marginTop: 4, fontWeight: 700 }}
+                      >
+                        <Icon name="mapPin" size={14} /> Cómo llegar
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <h2 style={{ fontSize: '1.375rem', marginTop: 32 }}>La historia</h2>

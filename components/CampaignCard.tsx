@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Campaign } from '@/lib/types';
 import { CAMPAIGN_CATEGORY, CAMPAIGN_STATUS, formatSoles, formatNumber, daysLeft } from '@/lib/format';
-import { assetUrl } from '@/lib/assets';
+import { coverFor } from '@/lib/covers';
 import { Progress } from './Progress';
 import { Icon } from './Icon';
 
@@ -15,12 +15,12 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const st = CAMPAIGN_STATUS[campaign.status];
   const funded = campaign.progressPct >= 100 || campaign.status === 'FUNDED';
   const dleft = daysLeft(campaign.deadline);
-  const cover = assetUrl(campaign.coverPhoto);
+  const cover = coverFor(campaign);
 
   return (
     <Link href={`/campanas/${campaign.slug}`} className="card">
-      <div className="cardCover" style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
-        {!cover && <Icon name={cat.icon} size={40} strokeWidth={1.6} />}
+      <div className="cardCover">
+        <span className="cardCoverImg" style={{ backgroundImage: `url(${cover.url})` }} aria-hidden="true" />
         <span className="badge badgeOnCover badgeGlass" style={{ left: 10 }}>
           <Icon name={cat.icon} size={13} /> {cat.label}
         </span>
@@ -33,9 +33,10 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
       <div className="cardBody">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span className={`badge ${TONE_CLASS[st.tone] ?? ''}`}>{st.label}</span>
+          {/* "0 días" no dice nada: si el plazo vence hoy se dice así. */}
           {dleft != null && campaign.status === 'ACTIVE' && (
             <span className="metaInline">
-              <Icon name="clock" size={14} /> {dleft} días
+              <Icon name="clock" size={14} /> {dleft === 0 ? 'Último día' : `${dleft} días`}
             </span>
           )}
         </div>

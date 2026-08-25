@@ -683,7 +683,8 @@ h3 {
 }
 .card {
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  /* Tarjetas de campana: esquinas rectas, no redondeadas. */
+  border-radius: 4px;
   overflow: hidden;
   background: var(--surface);
   box-shadow: var(--sh-sm);
@@ -1295,4 +1296,866 @@ textarea.control {
 .chip:focus-visible {
   outline: 2px solid var(--brand-500);
   outline-offset: 2px;
+}
+
+/* ---------- Hero landing (banda verde + tarjeta de donación) ---------- */
+:root {
+  --hero-green: #0a2f1a;
+  --hero-green-2: #12452a;
+  --orange-500: #e8562a;
+  --orange-600: #d0431a;
+}
+
+/* Sale del .container del layout para ocupar todo el ancho, igual que el header. */
+.heroBand {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: 56px 0 64px;
+  background: radial-gradient(120% 90% at 12% 0%, var(--hero-green-2) 0%, var(--hero-green) 60%);
+  color: #fff;
+}
+/* Trazos dibujados a mano de fondo (manos, corazones, hojas), muy tenues. */
+.heroBand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='260' viewBox='0 0 320 260' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M40 230v-52c0-9-3-16-9-24-5-7-2-13 4-10 4 2 7 6 9 11V96c0-6 8-6 8 0v50V88c0-6 8-6 8 0v58V96c0-6 8-6 8 0v50V110c0-6 8-6 8 0v66c0 30-12 42-20 54'/%3E%3Cpath d='M150 60c8-14 30-10 30 6 0 14-18 26-30 34-12-8-30-20-30-34 0-16 22-20 30-6z'/%3E%3Cpath d='M250 210c-16 0-28-14-26-30 2-16 14-24 30-28 10-2 14-6 18-12 4 8 6 18 4 30-4 22-14 40-26 40z'/%3E%3Cpath d='M236 214c4-14 12-26 22-34'/%3E%3Cpath d='M96 30c14 8 22 20 22 34'/%3E%3Cpath d='M280 96c-10 6-16 14-18 24'/%3E%3C/svg%3E");
+  background-size: 320px 260px;
+}
+.heroBandInner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: center;
+}
+@media (min-width: 940px) {
+  .heroBandInner {
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+  }
+}
+
+.heroKicker {
+  position: relative;
+  display: inline-block;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.heroKicker .heroSpark {
+  position: absolute;
+  top: -0.35em;
+  right: -1.1em;
+  color: var(--gold-400);
+}
+.heroHeadline {
+  font-size: clamp(2.2rem, 7.4vw, 4.25rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  margin: 0 0 22px;
+}
+.heroHeadline .hlGold {
+  color: var(--gold-400);
+}
+.heroLead {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 520px;
+  margin: 0 0 30px;
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+.btnOrange {
+  background: var(--orange-500);
+  color: #fff;
+  border-radius: var(--r-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 24px rgba(232, 86, 42, 0.32);
+}
+.btnOrange:hover {
+  background: var(--orange-600);
+}
+.heroPlay {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+}
+.heroPlayIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--orange-500);
+  flex: none;
+}
+.heroPlay:hover .heroPlayIcon {
+  transform: scale(1.05);
+}
+
+/* Tarjeta de donación rápida: baja fuera de la banda, como en el diseño. */
+.donateCard {
+  background: #fff;
+  color: var(--text);
+  border-radius: 6px;
+  box-shadow: 0 24px 60px rgba(4, 24, 12, 0.35);
+  overflow: hidden;
+}
+.donateCardHead {
+  background: var(--gold-400);
+  color: #3a2c00;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 16px 22px;
+}
+.donateCardMedia {
+  position: relative;
+  height: 176px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-600), var(--hero-green));
+}
+.donateCardPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 34%;
+}
+/* Curva blanca inferior, igual que el mock. */
+.donateCardMedia::after {
+  content: '';
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -1px;
+  height: 42px;
+  background: #fff;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.donateCardBody {
+  padding: 8px 22px 24px;
+  display: grid;
+  gap: 14px;
+}
+.donateFieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .donateFieldRow {
+    grid-template-columns: 1fr;
+  }
+}
+.donateLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: 6px;
+}
+.donateInput,
+.donateSelect {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-2);
+  font: inherit;
+  color: var(--text);
+}
+.donateInput:focus,
+.donateSelect:focus {
+  outline: 2px solid var(--brand-300);
+  outline-offset: 0;
+  background: #fff;
+}
+.donateSubmit {
+  width: 100%;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 15px 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.donateNote {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ═══════════ Fotografía real en toda la web ═══════════
+   Las fotos viven en /public/img (licencias libres, ver CREDITOS.json). Cada
+   bloque con foto lleva su propio degradado encima: sin él el texto blanco se
+   pierde en cuanto la imagen tiene cielo claro. */
+
+/* Hero: la foto va bajo la banda verde, no en lugar de ella. */
+.heroBandPhoto {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-size: cover;
+  background-position: center 38%;
+  opacity: 0.42;
+}
+.heroBandPhoto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(8, 40, 22, 0.95) 0%,
+    rgba(8, 40, 22, 0.82) 42%,
+    rgba(8, 40, 22, 0.45) 100%
+  );
+}
+
+/* Cifras reales, justo debajo del hero. */
+.trustStrip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 28px 0 44px;
+}
+.trustItem {
+  background: var(--surface);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+.trustItem strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--brand-700);
+  letter-spacing: -0.02em;
+}
+.trustItem span {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+@media (min-width: 720px) {
+  .trustStrip {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .trustItem {
+    padding: 22px 18px;
+  }
+}
+
+/* Tres formas de aportar. */
+.waysGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.wayCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--sh-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.wayCard:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-md);
+}
+.wayCardImg {
+  display: block;
+  height: 168px;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+.wayCard:hover .wayCardImg {
+  transform: scale(1.06);
+}
+.wayCardIcon {
+  position: absolute;
+  top: 138px;
+  left: 18px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--brand-600);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(9, 42, 24, 0.28);
+}
+.wayCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 30px 18px 20px;
+}
+.wayCardBody strong {
+  font-size: 1.15rem;
+}
+.wayCardText {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.wayCardCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-weight: 700;
+  color: var(--brand-700);
+  font-size: 0.92rem;
+}
+
+/* Franja con foto de fondo (reportar emergencia). */
+.photoBand {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  margin-bottom: 48px;
+  color: #fff;
+  background: var(--night-900);
+}
+.photoBandImg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-size: cover;
+  background-position: center 55%;
+}
+.photoBandImg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(95deg, rgba(10, 22, 16, 0.94) 0%, rgba(10, 22, 16, 0.78) 55%, rgba(10, 22, 16, 0.42) 100%);
+}
+.photoBandBody {
+  position: relative;
+  z-index: 1;
+  padding: 44px 24px;
+  max-width: 620px;
+}
+.eyebrowLight {
+  color: var(--gold-400);
+}
+.photoBandTitle {
+  font-size: clamp(1.5rem, 4.4vw, 2.1rem);
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+.photoBandText {
+  color: rgba(255, 255, 255, 0.84);
+  margin: 0 0 22px;
+  line-height: 1.6;
+}
+.photoBandActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (min-width: 720px) {
+  .photoBandBody {
+    padding: 60px 44px;
+  }
+}
+
+/* CTA final con foto. */
+.ctaBandImg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-size: cover;
+  background-position: center 60%;
+}
+.ctaBandImg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(8, 24, 15, 0.55), rgba(8, 24, 15, 0.82));
+}
+.ctaBandBody {
+  position: relative;
+  z-index: 1;
+}
+
+/* Portada de tarjeta: foto con acercamiento suave y velo para los badges. */
+.cardCover {
+  overflow: hidden;
+  height: 168px;
+}
+.cardCoverImg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+.card:hover .cardCoverImg {
+  transform: scale(1.06);
+}
+.cardCover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.12) 100%);
+  pointer-events: none;
+}
+.badgeOnCover {
+  z-index: 1;
+}
+
+/* Portada del detalle: misma foto, con espacio para respirar. */
+.detailHero {
+  position: relative;
+  height: 300px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.detailHero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.05));
+}
+
+/* Encabezado de página con foto (listado, formularios). */
+.pageBanner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  color: #fff;
+  background: var(--brand-700);
+  margin: 20px 0 32px;
+}
+.pageBannerImg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-size: cover;
+  background-position: center 45%;
+}
+.pageBannerImg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(95deg, rgba(8, 40, 22, 0.92) 0%, rgba(8, 40, 22, 0.74) 60%, rgba(8, 40, 22, 0.4) 100%);
+}
+.pageBannerBody {
+  position: relative;
+  z-index: 1;
+  padding: 36px 22px;
+  max-width: 640px;
+}
+.pageBannerTitle {
+  font-size: clamp(1.7rem, 4.6vw, 2.4rem);
+  font-weight: 800;
+  margin: 6px 0 8px;
+}
+.pageBannerText {
+  color: rgba(255, 255, 255, 0.84);
+  margin: 0;
+  line-height: 1.6;
+}
+.pageBannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+@media (min-width: 720px) {
+  .pageBannerBody {
+    padding: 48px 40px;
+  }
+}
+
+/* ═══════════ Selectores y controles de formulario ═══════════
+   El <select> nativo se ve distinto en cada sistema y rompe la línea del resto
+   del formulario. Se le quita la apariencia nativa y se le dibuja la flecha, sin
+   perder el menú del sistema (que en móvil es mejor que cualquier réplica). */
+select.control,
+.donateSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231f7d20' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+select.control:hover,
+.donateSelect:hover {
+  border-color: var(--brand-300);
+  background-color: #fff;
+}
+select.control:focus-visible,
+.donateSelect:focus-visible {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(60, 193, 57, 0.22);
+  background-color: #fff;
+}
+select.control:disabled,
+.donateSelect:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background-color: var(--surface-2);
+}
+/* Placeholder del selector ("Elige un centro…") en gris, opciones en negro. */
+select.control:invalid,
+select.control[data-empty='true'] {
+  color: var(--ink-400);
+}
+select.control option {
+  color: var(--text);
+  padding: 8px;
+}
+/* Selector compacto dentro de una fila (horarios "desde / hasta"). */
+.selectRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Campo de texto: mismo lenguaje visual que el selector. */
+.control:hover {
+  border-color: var(--brand-300);
+}
+.control:focus-visible {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(60, 193, 57, 0.22);
+}
+
+/* ═══════════ Comprobante de la donación ═══════════ */
+.labelReq {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: rgba(232, 86, 42, 0.12);
+  color: var(--orange-600);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.orDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.orDivider::before,
+.orDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.uploadBox {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1.5px dashed var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.uploadBox:hover {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+}
+.uploadBoxBusy {
+  opacity: 0.7;
+  cursor: progress;
+}
+.uploadInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.uploadIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--brand-700);
+  border: 1px solid var(--line);
+}
+.uploadText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.92rem;
+}
+.uploadText span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+.receiptPreview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--brand-300);
+  border-radius: 6px;
+  background: var(--brand-50);
+}
+.receiptThumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid rgba(31, 125, 32, 0.25);
+  flex: none;
+}
+.receiptInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.receiptInfo strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-700);
+  font-size: 0.95rem;
+}
+.receiptInfo span {
+  color: var(--ink-500);
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.receiptRemove {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-500);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex: none;
+}
+.receiptRemove:hover {
+  border-color: var(--danger-500);
+  color: var(--danger-500);
+}
+
+/* ───────── Ficha del centro de acopio elegido (donar especies) ─────────
+   El donante lleva las cosas en persona: foto para reconocer el local,
+   dirección escrita, botón al mapa y teléfono de contacto. */
+/* Aviso de política: no se reciben medicamentos. */
+.noMedsNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #f3d9a4;
+  border-radius: 10px;
+  background: #fdf6e3;
+  color: #8a5a00;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.noMedsNote svg {
+  flex: none;
+  margin-top: 1px;
+  color: #b45309;
+}
+
+.centerList {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.centerCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.centerCardPhoto {
+  display: block;
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--surface-2);
+  flex: none;
+}
+.centerCardBody {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.centerCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.centerCardName {
+  font-size: 1rem;
+  color: var(--ink-900);
+}
+.centerCardStatus {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+.centerCardStatus-NEAR_FULL {
+  background: #fef3e2;
+  color: #b45309;
+}
+.centerCardStatus-FULL,
+.centerCardStatus-CLOSED {
+  background: #fdecec;
+  color: var(--danger, #b42318);
+}
+.centerCardRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-500);
+  line-height: 1.45;
+}
+.centerCardRow svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--brand-600);
+}
+.centerCardRow a {
+  color: var(--brand-700);
+  font-weight: 700;
+  text-decoration: none;
+}
+.centerCardRow a:hover {
+  text-decoration: underline;
+}
+.centerCardMapBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  margin-top: 2px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  min-height: 0;
+}
+
+/* ═══════════ Créditos de fotografías ═══════════ */
+.creditGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin: 24px 0 40px;
+}
+.creditCard {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.creditThumb {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+.creditBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px 14px;
+  font-size: 0.88rem;
+}
+.creditBody strong {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+.creditBody span {
+  color: var(--text-muted);
+}
+.creditLicense {
+  font-weight: 700;
+  color: var(--brand-700) !important;
+  font-size: 0.8rem;
+}
+.creditLink {
+  color: var(--brand-700);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.creditLink:hover {
+  text-decoration: underline;
 }

@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { Icon } from './Icon';
 import {
   createDonation,
-  confirmDonationPayment,
+  uploadReceipt,
   getActiveEmergencies,
   getCenters,
+  getCampaignCenters,
   getCampaignPayInfo,
   type CreateDonationBody,
   type DonationType,
@@ -19,6 +20,7 @@ import {
   type Weekday,
 } from '@/lib/clientApi';
 import { formatSoles } from '@/lib/format';
+import { assetUrl } from '@/lib/assets';
 import { useT } from '@/lib/i18n';
 
 const TYPE_KEY: Record<DonationType, string> = {
@@ -68,70 +70,82 @@ const TIME_OPTIONS = Array.from({ length: (22 - 5) * 2 + 1 }, (_, i) => {
   return `${h}:${m}`;
 });
 
-// Datos de pago simulados (demo). Se muestran cuando la campaña no trae los suyos.
+// Datos de pago de la plataforma. Se muestran cuando la campaña no trae los suyos.
+// Cuentas BBVA reales para recibir donaciones (número de cuenta + CCI).
 const SIM_PAY = {
   yapeNumber: '987 654 321',
-  bankName: 'BCP',
-  bankAccount: '191-2345678-0-12',
-  accountHolder: 'NOSXOTROS ONG',
+  bankName: 'BBVA',
+  accountHolder: 'Asociación FT NosxOtros Arequipa',
+  accounts: [
+    { number: '0011-0220-0100184776', cci: '011-220-000100184776-11' },
+    { number: '0011-0220-0100184784', cci: '011-220-000100184784-15' },
+  ],
+  // QR interoperable BBVA: acepta pago desde cualquier billetera digital
+  // (Yape, Plin, apps de bancos).
+  qrImageUrl: '/img/qr-bbva-billeteras.jpeg',
 };
 
-// QR simulado determinista a partir de un texto (sin dependencias externas).
-function SimQr({ seed, size = 180 }: { seed: string; size?: number }) {
-  const N = 25;
-  const cells: boolean[] = [];
-  let h = 2166136261;
-  for (let i = 0; i < N * N; i++) {
-    h ^= seed.charCodeAt(i % seed.length) + i * 31;
-    h = Math.imul(h, 16777619) >>> 0;
-    cells.push((h & 7) < 3);
+// Foto genérica del sitio cuando el centro no tiene la suya (licencia libre,
+// ver web/public/img/CREDITOS.json).
+const CENTER_FALLBACK_PHOTO = '/img/entrega-familias.jpg';
+
+// Enlace para abrir la ubicación del centro en el mapa: usa el que cargó el
+// organizador y, si no hay, arma uno de Google Maps con coordenadas o dirección.
+function centerMapsHref(c: CenterLite): string {
+  if (c.mapUrl) return c.mapUrl;
+  if (typeof c.lat === 'number' && typeof c.lng === 'number') {
+    return `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`;
   }
-  const isFinder = (r: number, c: number) => {
-    const inBox = (br: number, bc: number) =>
-      r >= br && r < br + 7 && c >= bc && c < bc + 7 &&
-      (r === br || r === br + 6 || c === bc || c === bc + 6 || (r >= br + 2 && r <= br + 4 && c >= bc + 2 && c <= bc + 4));
-    return inBox(0, 0) || inBox(0, N - 7) || inBox(N - 7, 0);
-  };
-  const clearFinder = (r: number, c: number) =>
-    (r < 8 && c < 8) || (r < 8 && c >= N - 8) || (r >= N - 8 && c < 8);
-  const px = size / N;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="QR de pago simulado">
-      <rect width={size} height={size} fill="#fff" />
-      {Array.from({ length: N * N }).map((_, i) => {
-        const r = Math.floor(i / N);
-        const c = i % N;
-        const on = isFinder(r, c) || (!clearFinder(r, c) && cells[i]);
-        if (!on) return null;
-        return <rect key={i} x={c * px} y={r * px} width={px} height={px} fill="#111" />;
-      })}
-    </svg>
-  );
+  if (c.address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`;
+  }
+  return '';
 }
+
+const CENTER_STATUS_LABEL: Record<NonNullable<CenterLite['status']>, string> = {
+  OPEN: 'Recibiendo donaciones',
+  NEAR_FULL: 'Casi lleno',
+  FULL: 'Lleno',
+  CLOSED: 'Cerrado',
+};
 
 export function DonateForm({
   campaignId,
   campaignTitle,
   emergencyId: presetEmergencyId,
+  initialType,
+  initialAmount,
+  initialName,
+  initialEmail,
 }: {
   campaignId?: string;
   campaignTitle?: string;
   emergencyId?: string;
+  initialType?: DonationType;
+  initialAmount?: number;
+  initialName?: string;
+  initialEmail?: string;
 }) {
   const isCampaign = !!campaignId;
   const t = useT();
 
-  const [type, setType] = useState<DonationType>('MONEY');
-  const [amount, setAmount] = useState<number | ''>('');
+  const [type, setType] = useState<DonationType>(initialType ?? 'MONEY');
+  const [amount, setAmount] = useState<number | ''>(initialAmount ?? '');
+  const [accountNumber, setAccountNumber] = useState('');
+  // Prueba del abono: número de operación y/o captura del voucher.
+  const [operationNumber, setOperationNumber] = useState('');
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [receiptName, setReceiptName] = useState('');
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [description, setDescription] = useState('');
   const [emergencyId, setEmergencyId] = useState(presetEmergencyId ?? '');
-  const [centerId, setCenterId] = useState('');
   // Pago simulado: siempre Yape (no se elige método en la web).
   const paymentMethod: PaymentMethod = 'YAPE';
   const [anonymous, setAnonymous] = useState(false);
-  const [donorName, setDonorName] = useState('');
-  const [donorEmail, setDonorEmail] = useState('');
+  const [donorName, setDonorName] = useState(initialName ?? '');
+  const [donorEmail, setDonorEmail] = useState(initialEmail ?? '');
   const [donorPhone, setDonorPhone] = useState('');
   // Voluntariado
   const [volSkills, setVolSkills] = useState<VolunteerSkill[]>([]);
@@ -147,9 +161,13 @@ export function DonateForm({
   const [code, setCode] = useState('');
 
   useEffect(() => {
-    getCenters()
-      .then(setCenters)
-      .catch(() => setCenters([]));
+    // En una campaña se muestran SUS centros de acopio; si aún no tiene,
+    // se cae a la lista general para no dejar al donante sin destino.
+    const loadCenters =
+      isCampaign && campaignId
+        ? getCampaignCenters(campaignId).then((cs) => (cs.length ? cs : getCenters()))
+        : getCenters();
+    loadCenters.then(setCenters).catch(() => setCenters([]));
     if (isCampaign) {
       if (campaignId) getCampaignPayInfo(campaignId).then(setPayInfo).catch(() => setPayInfo(null));
       return; // las campañas son el destino; no se elige emergencia
@@ -162,27 +180,34 @@ export function DonateForm({
   // El horario debe avanzar: "de 14:00 a 09:00" no significa nada.
   const rangeValid = volStart < volEnd;
 
+  // Especies no se registra aquí: solo se muestran los centros de acopio y el
+  // donante lleva las cosas en persona (el registro lo hace el centro).
   const detailsValid =
     type === 'MONEY'
-      ? typeof amount === 'number' && amount > 0
-      : type === 'GOODS'
-        ? typeof quantity === 'number' && quantity > 0 && description.trim().length > 0
-        : // Voluntariado: horas, teléfono, área y disponibilidad.
-          typeof quantity === 'number' &&
-          quantity > 0 &&
-          donorPhone.trim().length >= 6 &&
-          donorName.trim().length > 0 &&
-          volSkills.length > 0 &&
-          volDays.length > 0 &&
-          rangeValid;
+      ? typeof amount === 'number' &&
+        amount > 0 &&
+        accountNumber.trim().length > 0 &&
+        // Sin operación ni voucher el aporte no se puede acreditar nunca.
+        (operationNumber.trim().length > 0 || receiptUrl.length > 0) &&
+        !uploadingReceipt
+      : // Voluntariado: horas, teléfono, área y disponibilidad.
+        typeof quantity === 'number' &&
+        quantity > 0 &&
+        donorPhone.trim().length >= 6 &&
+        donorName.trim().length > 0 &&
+        volSkills.length > 0 &&
+        volDays.length > 0 &&
+        rangeValid;
 
   // Lo primero que falta para poder enviar, en orden de aparición del formulario.
   const missingHint = (() => {
-    if (detailsValid || submitting) return '';
-    if (type === 'MONEY') return 'Elige o escribe un monto para continuar.';
-    if (type === 'GOODS') {
-      if (!(typeof quantity === 'number' && quantity > 0)) return 'Indica cuántas unidades vas a donar.';
-      if (!description.trim()) return 'Describe qué vas a donar.';
+    if (type === 'GOODS' || detailsValid || submitting) return '';
+    if (type === 'MONEY') {
+      if (!(typeof amount === 'number' && amount > 0)) return 'Elige o escribe un monto para continuar.';
+      if (!accountNumber.trim()) return 'Escribe el número de cuenta o celular desde el que transferiste.';
+      if (uploadingReceipt) return 'Espera a que termine de subir tu comprobante.';
+      if (!operationNumber.trim() && !receiptUrl)
+        return 'Escribe el número de operación o sube la captura de tu comprobante.';
       return '';
     }
     if (volSkills.length === 0) return 'Elige al menos un área en la que puedes ayudar.';
@@ -199,6 +224,35 @@ export function DonateForm({
   const toggleSkill = (s: VolunteerSkill) =>
     setVolSkills((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
+  async function onReceiptPicked(file?: File) {
+    if (!file) return;
+    setReceiptError('');
+    if (!file.type.startsWith('image/')) {
+      setReceiptError('El comprobante debe ser una imagen (captura o foto).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setReceiptError('La imagen pesa más de 5 MB. Sube una captura más liviana.');
+      return;
+    }
+    setUploadingReceipt(true);
+    try {
+      const url = await uploadReceipt(file);
+      setReceiptUrl(url);
+      setReceiptName(file.name);
+    } catch (e) {
+      setReceiptError(e instanceof Error ? e.message : 'No se pudo subir el comprobante.');
+    } finally {
+      setUploadingReceipt(false);
+    }
+  }
+
+  function clearReceipt() {
+    setReceiptUrl('');
+    setReceiptName('');
+    setReceiptError('');
+  }
+
   async function submit() {
     setError('');
     setSubmitting(true);
@@ -213,7 +267,6 @@ export function DonateForm({
         type,
         campaignId: campaignId || undefined,
         emergencyId: !isCampaign && emergencyId ? emergencyId : undefined,
-        centerId: !isCampaign && centerId ? centerId : undefined,
         description: description.trim() || undefined,
         donorPhone: donorPhone || undefined,
         anonymous: hideIdentity,
@@ -231,14 +284,16 @@ export function DonateForm({
       if (type === 'MONEY') {
         body.amount = typeof amount === 'number' ? amount : 0;
         body.paymentMethod = paymentMethod;
+        body.donorAccountNumber = accountNumber.trim();
+        body.operationNumber = operationNumber.trim() || undefined;
+        body.receiptUrl = receiptUrl || undefined;
       } else {
         body.quantity = typeof quantity === 'number' ? quantity : 1;
         body.paymentMethod = 'IN_KIND';
       }
+      // No se confirma el pago aquí: queda "no acreditado" hasta que un
+      // administrador coteje la transferencia y la acredite.
       const donation = await createDonation(body);
-      if (type === 'MONEY') {
-        await confirmDonationPayment(donation.id, 'WEB');
-      }
       setCode(donation.code);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo registrar la donación.');
@@ -264,6 +319,7 @@ export function DonateForm({
           <h1 className="formTitle">¡Gracias por tu aporte!</h1>
           <p className="formLead">
             Guarda tu código para seguir el recorrido de tu donación con trazabilidad total.
+            {type === 'MONEY' && ' Tu aporte queda como "no acreditado" hasta que el administrador confirme la transferencia.'}
           </p>
           <div className="codeChip">
             {code}
@@ -348,30 +404,6 @@ export function DonateForm({
               />
             </div>
           </>
-        )}
-
-        {type === 'GOODS' && (
-          <div className="fieldRow" style={{ marginBottom: 16 }}>
-            <div>
-              <label className="label">Cantidad</label>
-              <input
-                className="control"
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="label">¿Qué donas?</label>
-              <input
-                className="control"
-                placeholder="Frazadas, agua, alimentos…"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
         )}
 
         {type === 'TIME' && (
@@ -490,81 +522,244 @@ export function DonateForm({
 
         {/* Destino (solo donación general) */}
         {!isCampaign && (
-          <>
-            <div className="field">
-              <label className="label">Destino (emergencia)</label>
-              <select
-                className="control"
-                value={emergencyId}
-                onChange={(e) => setEmergencyId(e.target.value)}
-              >
-                <option value="">Donde más se necesite</option>
-                {emergencies.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.title}
-                  </option>
-                ))}
-              </select>
+          <div className="field">
+            <label className="label">Destino (emergencia)</label>
+            <select
+              className="control"
+              data-empty={emergencyId === '' ? 'true' : undefined}
+              value={emergencyId}
+              onChange={(e) => setEmergencyId(e.target.value)}
+            >
+              <option value="">Donde más se necesite</option>
+              {emergencies.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Especies: no hay formulario. Solo se listan los centros de acopio de
+            la campaña; el donante lleva las cosas en persona y el centro las
+            registra al recibirlas. */}
+        {type === 'GOODS' && (
+          <div className="field">
+            <label className="label">Centros de acopio de esta campaña</label>
+            <p className="fieldHint">
+              Lleva tu donación a cualquiera de estos centros. Ahí la reciben y la registran.
+            </p>
+            <p className="noMedsNote" role="note">
+              <Icon name="alertTriangle" size={18} />
+              <span>
+                <strong>No recibimos medicamentos.</strong> Por seguridad sanitaria, los centros
+                de acopio no aceptan fármacos de ningún tipo (los botiquines de primeros
+                auxilios sí se reciben).
+              </span>
+            </p>
+            <div className="centerList">
+              {centers.map((c) => {
+                const photo = assetUrl(c.photoUrl) || CENTER_FALLBACK_PHOTO;
+                const mapsHref = centerMapsHref(c);
+                const phone = c.contactPhone?.trim();
+                return (
+                  <div key={c.id} className="centerCard">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo}
+                      alt={`Foto del ${c.name}`}
+                      className="centerCardPhoto"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.src !== window.location.origin + CENTER_FALLBACK_PHOTO) {
+                          img.src = CENTER_FALLBACK_PHOTO;
+                        }
+                      }}
+                    />
+                    <div className="centerCardBody">
+                      <div className="centerCardHead">
+                        <strong className="centerCardName">{c.name}</strong>
+                        {c.status && (
+                          <span className={`centerCardStatus centerCardStatus-${c.status}`}>
+                            {CENTER_STATUS_LABEL[c.status]}
+                          </span>
+                        )}
+                      </div>
+
+                      {c.address && (
+                        <p className="centerCardRow">
+                          <Icon name="mapPin" size={16} />
+                          <span>
+                            {c.address}
+                            {c.reference ? ` · ${c.reference}` : ''}
+                          </span>
+                        </p>
+                      )}
+                      {c.openingHours && (
+                        <p className="centerCardRow">
+                          <Icon name="clock" size={16} />
+                          <span>{c.openingHours}</span>
+                        </p>
+                      )}
+                      {phone && (
+                        <p className="centerCardRow">
+                          <Icon name="phone" size={16} />
+                          <a href={`tel:${phone.replace(/\s+/g, '')}`}>{phone}</a>
+                        </p>
+                      )}
+
+                      {mapsHref && (
+                        <a
+                          href={mapsHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btnGhost centerCardMapBtn"
+                        >
+                          <Icon name="mapPin" size={16} /> Abrir ubicación en Maps
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {centers.length === 0 && (
+                <p className="fieldHint">Por ahora no hay centros de acopio disponibles.</p>
+              )}
             </div>
-            <div className="field">
-              <label className="label">Centro de acopio (opcional)</label>
-              <select
-                className="control"
-                value={centerId}
-                onChange={(e) => setCenterId(e.target.value)}
-              >
-                <option value="">Sin preferencia</option>
-                {centers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                    {c.openingHours ? ` — ${c.openingHours}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
+          </div>
         )}
 
         {/* Datos de pago (Yape / cuenta / QR). Usa los de la campaña o simulados. */}
         {type === 'MONEY' && (() => {
           const yape = payInfo?.yapeNumber || SIM_PAY.yapeNumber;
-          const bankName = payInfo?.bankName || SIM_PAY.bankName;
-          const bankAccount = payInfo?.bankAccount || SIM_PAY.bankAccount;
           const holder = payInfo?.accountHolder || SIM_PAY.accountHolder;
-          const qrSeed = `${yape}|${bankAccount}|${amount || ''}`;
+          // Si la campaña publica su propia cuenta se usa esa; si no, las
+          // cuentas BBVA de la plataforma.
+          const accounts = payInfo?.bankAccount
+            ? [{ bankName: payInfo.bankName || '', number: payInfo.bankAccount, cci: payInfo.cci || '' }]
+            : SIM_PAY.accounts.map((a) => ({ bankName: SIM_PAY.bankName, ...a }));
+          // QR de la campaña si publicó uno; si no, el QR BBVA de la asociación.
+          const qrImage = payInfo?.qrImageUrl || SIM_PAY.qrImageUrl;
           return (
             <div className="payInfoBox" style={{ margin: '4px 0 16px', padding: 16, borderRadius: 12, background: 'var(--surface-2, #f4f6f5)', fontSize: 14, lineHeight: 1.7 }}>
-              <strong>Paga con Yape / Plin o transferencia</strong>
+              <strong>Paga con cualquier billetera digital o transferencia</strong>
               <div style={{ marginTop: 4 }}>Yape/Plin: <strong>{yape}</strong></div>
-              <div>Cuenta: <strong>{bankName} {bankAccount}</strong></div>
+              {accounts.map((a) => (
+                <div key={a.number}>
+                  <div>Cuenta: <strong>{a.bankName} {a.number}</strong></div>
+                  {a.cci && <div>CCI: <strong>{a.cci}</strong></div>}
+                </div>
+              ))}
               <div>Titular: {holder}</div>
               <div style={{ marginTop: 12, textAlign: 'center' }}>
-                {payInfo?.qrImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={payInfo.qrImageUrl} alt="QR de pago" style={{ width: 180, height: 180, objectFit: 'contain' }} />
-                ) : (
-                  <div style={{ display: 'inline-block', padding: 8, background: '#fff', borderRadius: 12 }}>
-                    <SimQr seed={qrSeed} />
-                  </div>
-                )}
+                <div style={{ display: 'inline-block', padding: 8, background: '#fff', borderRadius: 12 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qrImage}
+                    alt="QR de pago interoperable: escanéalo con cualquier billetera digital"
+                    style={{ width: 220, maxWidth: '100%', height: 'auto', objectFit: 'contain', borderRadius: 8 }}
+                  />
+                </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                  Escanea el QR con Yape/Plin{amount ? ` · ${formatSoles(Number(amount))}` : ''}
+                  Escanea el QR y paga con cualquier billetera digital (Yape, Plin, app de tu banco)
+                  {amount ? ` · ${formatSoles(Number(amount))}` : ''}
                 </div>
               </div>
             </div>
           );
         })()}
 
+        {type === 'MONEY' && (
+          <div className="field">
+            <label className="label" htmlFor="accountNumber">Tu número de cuenta o celular Yape/Plin</label>
+            <p className="fieldHint">Con qué transferiste. Así el administrador coteja el abono y lo acredita.</p>
+            <input
+              id="accountNumber"
+              className="control"
+              placeholder="987654321 o 191-2345678-0-12"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+            />
+          </div>
+        )}
+
+        {/* Prueba del abono: número de operación o captura. Uno de los dos es
+            obligatorio; sin eso nadie puede acreditar la transferencia. */}
+        {type === 'MONEY' && (
+          <div className="field">
+            <label className="label" htmlFor="operationNumber">
+              Comprobante de tu transferencia <span className="labelReq">obligatorio</span>
+            </label>
+            <p className="fieldHint">
+              Escribe el número de operación <strong>o</strong> sube la captura. Con cualquiera de los
+              dos basta.
+            </p>
+            <input
+              id="operationNumber"
+              className="control"
+              placeholder="N.° de operación (ej. 00123456)"
+              value={operationNumber}
+              onChange={(e) => setOperationNumber(e.target.value)}
+              inputMode="numeric"
+            />
+
+            <div className="orDivider" aria-hidden="true">
+              <span>o</span>
+            </div>
+
+            {receiptUrl ? (
+              <div className="receiptPreview">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={receiptUrl} alt="Comprobante subido" className="receiptThumb" />
+                <div className="receiptInfo">
+                  <strong>
+                    <Icon name="check" size={15} /> Comprobante subido
+                  </strong>
+                  <span>{receiptName}</span>
+                </div>
+                <button type="button" className="receiptRemove" onClick={clearReceipt}>
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <label className={`uploadBox ${uploadingReceipt ? 'uploadBoxBusy' : ''}`}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="uploadInput"
+                  disabled={uploadingReceipt}
+                  onChange={(e) => onReceiptPicked(e.target.files?.[0])}
+                />
+                <span className="uploadIcon">
+                  <Icon name="image" size={22} />
+                </span>
+                <span className="uploadText">
+                  <strong>{uploadingReceipt ? 'Subiendo comprobante…' : 'Subir captura del comprobante'}</strong>
+                  <span>JPG o PNG, hasta 5 MB</span>
+                </span>
+              </label>
+            )}
+
+            {receiptError && (
+              <p className="fieldError" role="alert">
+                {receiptError}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Donante. En voluntariado no hay anonimato: sin nombre ni correo el
-            organizador no puede coordinar con quien se ofrece. */}
-        {type !== 'TIME' && (
+            organizador no puede coordinar con quien se ofrece. En especies no
+            hay nada que registrar aquí. */}
+        {type === 'MONEY' && (
           <label className="checkRow">
             <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
             Donar de forma anónima
           </label>
         )}
 
-        {(type === 'TIME' || !anonymous) && (
+        {type !== 'GOODS' && (type === 'TIME' || !anonymous) && (
           <div className="fieldRow" style={{ marginBottom: 16 }}>
             <div>
               <label className="label" htmlFor="donorName">
@@ -599,17 +794,21 @@ export function DonateForm({
           </p>
         )}
 
-        <button
-          type="button"
-          // `disabled` de verdad, no solo la clase: btnDisabled apaga el ratón con
-          // pointer-events, pero con el teclado se seguía pudiendo enviar el
-          // formulario incompleto.
-          disabled={!detailsValid || submitting}
-          className={`btn btnGold btnLg btnFull ${!detailsValid || submitting ? 'btnDisabled' : ''}`}
-          onClick={submit}
-        >
-          <Icon name="heart" size={18} /> {submitting ? t('donate.processing') : t('donate.confirm')}
-        </button>
+        {/* En especies no hay nada que enviar: el aporte se concreta llevando
+            las cosas al centro de acopio. */}
+        {type !== 'GOODS' && (
+          <button
+            type="button"
+            // `disabled` de verdad, no solo la clase: btnDisabled apaga el ratón con
+            // pointer-events, pero con el teclado se seguía pudiendo enviar el
+            // formulario incompleto.
+            disabled={!detailsValid || submitting}
+            className={`btn btnGold btnLg btnFull ${!detailsValid || submitting ? 'btnDisabled' : ''}`}
+            onClick={submit}
+          >
+            <Icon name="heart" size={18} /> {submitting ? t('donate.processing') : t('donate.confirm')}
+          </button>
+        )}
       </div>
     </div>
   );

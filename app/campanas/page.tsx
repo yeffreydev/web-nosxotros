@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { getCampaigns } from '@/lib/api';
 import { newCampaignLink } from '@/lib/config';
 import { CampaignCard } from '@/components/CampaignCard';
+import { PHOTO } from '@/lib/covers';
+import { Icon } from '@/components/Icon';
 
 export const metadata: Metadata = {
   title: 'Explorar campañas',
@@ -18,16 +20,26 @@ export default async function CampaignsPage() {
   const campaigns = (await getCampaigns()) ?? [];
 
   return (
-    <div style={{ paddingTop: 24 }}>
-      <div className="sectionHead">
-        <div>
-          <div className="eyebrow">Crecimiento</div>
-          <h1 className="sectionTitle">Campañas de crecimiento</h1>
+    <div>
+      <section className="pageBanner">
+        <span className="pageBannerImg" style={{ backgroundImage: `url(${PHOTO.entrega})` }} aria-hidden="true" />
+        <div className="pageBannerBody">
+          <div className="eyebrow eyebrowLight">Crecimiento</div>
+          <h1 className="pageBannerTitle">Campañas que necesitan tu apoyo</h1>
+          <p className="pageBannerText">
+            Cada campaña muestra cuánto lleva recaudado, qué necesita todavía y quién la organiza.
+            Aportas en dinero, en especie o con tu tiempo, y sigues a dónde fue tu ayuda.
+          </p>
+          <div className="pageBannerActions">
+            <a href={newCampaignLink()} className="btn btnGold">
+              <Icon name="sparkles" size={16} /> Crear campaña
+            </a>
+            <Link href="/reportar" className="btn btnGhostLight">
+              Reportar una emergencia
+            </Link>
+          </div>
         </div>
-        <a href={newCampaignLink()} className="btn btnGold">
-          Crear campaña
-        </a>
-      </div>
+      </section>
 
       {campaigns.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>

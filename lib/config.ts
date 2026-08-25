@@ -18,3 +18,35 @@ export const appLink = (path = '') => `${APP_URL}${path}`;
 // "Iniciar campaña": va directo a la config de campaña nueva. Si hay sesión
 // (MANAGER/ADMIN) abre el formulario; si no, el app redirige a login/registro.
 export const newCampaignLink = () => appLink('/organizador/nueva');
+
+// Prellenado del hero: los datos del organizador y el borrador de la campaña
+// viajan al registro del app; al terminar cae en /organizador/nueva con el
+// título, la categoría y la meta ya cargados (o directo si ya hay sesión).
+export type CampaignPrefill = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  org?: string;
+  ruc?: string;
+  title?: string;
+  category?: string;
+  goal?: number;
+};
+
+export function startCampaignLink(prefill: CampaignPrefill = {}): string {
+  const draft = new URLSearchParams();
+  if (prefill.title) draft.set('title', prefill.title);
+  if (prefill.category) draft.set('category', prefill.category);
+  if (prefill.goal && prefill.goal > 0) draft.set('goal', String(prefill.goal));
+
+  const next = draft.toString() ? `/organizador/nueva?${draft}` : '/organizador/nueva';
+
+  const q = new URLSearchParams({ role: 'MANAGER', next });
+  if (prefill.name) q.set('name', prefill.name);
+  if (prefill.email) q.set('email', prefill.email);
+  if (prefill.phone) q.set('phone', prefill.phone);
+  if (prefill.org) q.set('org', prefill.org);
+  if (prefill.ruc) q.set('ruc', prefill.ruc);
+
+  return appLink(`/registro?${q.toString()}`);
+}

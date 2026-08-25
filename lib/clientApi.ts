@@ -58,6 +58,11 @@ export interface CreateDonationBody {
   donorName?: string;
   donorEmail?: string;
   donorPhone?: string;
+  // Cuenta/celular desde el que el donante dice haber transferido (MONEY).
+  donorAccountNumber?: string;
+  // Prueba del abono (MONEY): al menos uno de los dos es obligatorio.
+  operationNumber?: string;
+  receiptUrl?: string;
   // Voluntariado (type = TIME) a una campaña: inscriben al donante en sus
   // voluntarios, para que el organizador pueda contactarlo y organizarlo.
   volunteerSkills?: VolunteerSkill[];
@@ -82,11 +87,28 @@ export function createDonation(body: CreateDonationBody): Promise<DonationResult
   });
 }
 
-export function confirmDonationPayment(id: string, reference?: string): Promise<DonationResult> {
-  return request<DonationResult>(`/donations/${id}/confirm-payment`, {
-    method: 'POST',
-    body: JSON.stringify({ reference: reference ?? 'WEB' }),
-  });
+/**
+ * Sube la captura del comprobante de una transferencia.
+ *
+ * Va por un endpoint público: el donante de la web no tiene cuenta. Devuelve la
+ * URL absoluta que después viaja en la donación como `receiptUrl`.
+ */
+export async function uploadReceipt(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${PUBLIC_API_URL}/uploads/receipt`, { method: 'POST', body: form });
+  if (!res.ok) {
+    let message = `Error ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data?.message) message = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+    } catch {
+      /* respuesta sin cuerpo JSON */
+    }
+    throw new Error(message);
+  }
+  const data = (await res.json()) as { url: string };
+  return data.url;
 }
 
 export interface TraceEvent {
@@ -203,14 +225,31 @@ export function getActiveEmergencies(): Promise<EmergencyLite[]> {
 }
 
 // Centros de acopio (para elegir destino al donar). Endpoint público GET.
+// El backend devuelve la fila completa; aquí se tipan los campos que el
+// donante necesita para llegar: dirección, referencia, teléfono, mapa y foto.
 export interface CenterLite {
   id: string;
   name: string;
+  address?: string | null;
+  reference?: string | null;
   openingHours?: string | null;
+  contactPhone?: string | null;
+  mapUrl?: string | null;
+  photoUrl?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  status?: 'OPEN' | 'NEAR_FULL' | 'FULL' | 'CLOSED';
 }
 
 export function getCenters(): Promise<CenterLite[]> {
   return request<CenterLite[]>('/centers');
+}
+
+// Centros de acopio de una campaña concreta (público, vía /operations).
+export function getCampaignCenters(idOrSlug: string): Promise<CenterLite[]> {
+  return request<{ centers?: CenterLite[] }>(
+    `/campaigns/${encodeURIComponent(idOrSlug)}/operations`,
+  ).then((r) => r.centers ?? []);
 }
 
 // Datos de pago de una campaña (Yape / cuenta) — backend real, público.
@@ -221,6 +260,7 @@ export interface CampaignPayInfo {
   yapePhone?: string | null;
   bankName?: string | null;
   bankAccount?: string | null;
+  cci?: string | null;
   accountHolder?: string | null;
   qrImageUrl?: string | null;
 }

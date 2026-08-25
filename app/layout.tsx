@@ -60,7 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <p>Respuesta social en tiempo real · Arequipa, Perú</p>
             <p>
-              <Link href="/campanas">Campañas</Link> · © 2026 NOSXOTROS
+              <Link href="/campanas">Campañas</Link> · <Link href="/creditos">Créditos de fotos</Link> ·{' '}
+              © 2026 NOSXOTROS
             </p>
           </div>
         </footer>

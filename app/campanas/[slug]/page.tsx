@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCampaign, getCampaignGoals, getCampaignOperations } from '@/lib/api';
 import { assetUrl } from '@/lib/assets';
+import { coverFor } from '@/lib/covers';
 import { SITE_URL } from '@/lib/config';
 import {
   CAMPAIGN_CATEGORY,
@@ -123,9 +124,7 @@ export default async function CampaignDetailPage({ params }: Params) {
         </a>
       </p>
 
-      <div className="detailHero" style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
-        {!cover && <Icon name={cat.icon} size={72} strokeWidth={1.4} />}
-      </div>
+      <div className="detailHero" style={{ backgroundImage: `url(${coverFor(c).url})` }} />
 
       <div className="badges">
         <span className="badge"><Icon name={cat.icon} size={13} /> {cat.label}</span>

@@ -116,6 +116,8 @@ export interface Center {
   /** Foto del local: sirve para reconocerlo al llegar. */
   photoUrl?: string;
   status: 'OPEN' | 'NEAR_FULL' | 'FULL' | 'CLOSED';
+  /** Almacén central que además acopia (el interno no llega al público). */
+  isCentral?: boolean;
 }
 
 /** Zonas y centros de una campaña (lectura pública). */

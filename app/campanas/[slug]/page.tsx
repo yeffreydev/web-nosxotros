@@ -255,6 +255,7 @@ export default async function CampaignDetailPage({ params }: Params) {
                   )}
                   <div style={{ minWidth: 0 }}>
                     <strong>{ctr.name}</strong>
+                    {ctr.isCentral && <span className="badge badgeGold" style={{ marginLeft: 6 }}>Almacén central</span>}
                     {ctr.status === 'NEAR_FULL' && <span className="badge badgeGold" style={{ marginLeft: 6 }}>Casi lleno</span>}
                     {ctr.status === 'FULL' && <span className="badge" style={{ marginLeft: 6 }}>Lleno</span>}
                     {ctr.address && <div style={{ color: 'var(--text-muted)' }}>{ctr.address}</div>}

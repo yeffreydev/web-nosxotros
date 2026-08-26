@@ -9,13 +9,11 @@ import {
   getActiveEmergencies,
   getCenters,
   getCampaignCenters,
-  getCampaignPayInfo,
   type CreateDonationBody,
   type DonationType,
   type PaymentMethod,
   type EmergencyLite,
   type CenterLite,
-  type CampaignPayInfo,
   type VolunteerSkill,
   type Weekday,
 } from '@/lib/clientApi';
@@ -70,12 +68,13 @@ const TIME_OPTIONS = Array.from({ length: (22 - 5) * 2 + 1 }, (_, i) => {
   return `${h}:${m}`;
 });
 
-// Datos de pago de la plataforma. Se muestran cuando la campaña no trae los suyos.
-// Cuentas BBVA reales para recibir donaciones (número de cuenta + CCI).
-const SIM_PAY = {
-  yapeNumber: '987 654 321',
+// Datos de pago de NOSXOTROS. Todas las donaciones de todas las campañas entran
+// aquí; luego la asociación transfiere a cada campaña (los datos bancarios que
+// registra el organizador son para ese desembolso, no se muestran al donante).
+// Cuentas BBVA reales a nombre de ASOCIACION FT NOSXOTROS AREQUIPA.
+const NOSXOTROS_PAY = {
   bankName: 'BBVA',
-  accountHolder: 'Asociación FT NosxOtros Arequipa',
+  accountHolder: 'ASOCIACION FT NOSXOTROS AREQUIPA',
   accounts: [
     { number: '0011-0220-0100184776', cci: '011-220-000100184776-11' },
     { number: '0011-0220-0100184784', cci: '011-220-000100184784-15' },
@@ -155,7 +154,6 @@ export function DonateForm({
 
   const [emergencies, setEmergencies] = useState<EmergencyLite[]>([]);
   const [centers, setCenters] = useState<CenterLite[]>([]);
-  const [payInfo, setPayInfo] = useState<CampaignPayInfo | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [code, setCode] = useState('');
@@ -168,10 +166,9 @@ export function DonateForm({
         ? getCampaignCenters(campaignId).then((cs) => (cs.length ? cs : getCenters()))
         : getCenters();
     loadCenters.then(setCenters).catch(() => setCenters([]));
-    if (isCampaign) {
-      if (campaignId) getCampaignPayInfo(campaignId).then(setPayInfo).catch(() => setPayInfo(null));
-      return; // las campañas son el destino; no se elige emergencia
-    }
+    // Los datos de pago no dependen de la campaña: todas las donaciones entran
+    // a las cuentas de NOSXOTROS y la asociación desembolsa a cada campaña.
+    if (isCampaign) return; // las campañas son el destino; no se elige emergencia
     getActiveEmergencies()
       .then(setEmergencies)
       .catch(() => setEmergencies([]));
@@ -630,45 +627,34 @@ export function DonateForm({
           </div>
         )}
 
-        {/* Datos de pago (Yape / cuenta / QR). Usa los de la campaña o simulados. */}
-        {type === 'MONEY' && (() => {
-          const yape = payInfo?.yapeNumber || SIM_PAY.yapeNumber;
-          const holder = payInfo?.accountHolder || SIM_PAY.accountHolder;
-          // Si la campaña publica su propia cuenta se usa esa; si no, las
-          // cuentas BBVA de la plataforma.
-          const accounts = payInfo?.bankAccount
-            ? [{ bankName: payInfo.bankName || '', number: payInfo.bankAccount, cci: payInfo.cci || '' }]
-            : SIM_PAY.accounts.map((a) => ({ bankName: SIM_PAY.bankName, ...a }));
-          // QR de la campaña si publicó uno; si no, el QR BBVA de la asociación.
-          const qrImage = payInfo?.qrImageUrl || SIM_PAY.qrImageUrl;
-          return (
-            <div className="payInfoBox" style={{ margin: '4px 0 16px', padding: 16, borderRadius: 12, background: 'var(--surface-2, #f4f6f5)', fontSize: 14, lineHeight: 1.7 }}>
-              <strong>Paga con cualquier billetera digital o transferencia</strong>
-              <div style={{ marginTop: 4 }}>Yape/Plin: <strong>{yape}</strong></div>
-              {accounts.map((a) => (
-                <div key={a.number}>
-                  <div>Cuenta: <strong>{a.bankName} {a.number}</strong></div>
-                  {a.cci && <div>CCI: <strong>{a.cci}</strong></div>}
-                </div>
-              ))}
-              <div>Titular: {holder}</div>
-              <div style={{ marginTop: 12, textAlign: 'center' }}>
-                <div style={{ display: 'inline-block', padding: 8, background: '#fff', borderRadius: 12 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={qrImage}
-                    alt="QR de pago interoperable: escanéalo con cualquier billetera digital"
-                    style={{ width: 220, maxWidth: '100%', height: 'auto', objectFit: 'contain', borderRadius: 8 }}
-                  />
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                  Escanea el QR y paga con cualquier billetera digital (Yape, Plin, app de tu banco)
-                  {amount ? ` · ${formatSoles(Number(amount))}` : ''}
-                </div>
+        {/* Datos de pago de NOSXOTROS: iguales en todas las campañas. El dinero
+            entra a la asociación y ella lo transfiere a cada campaña. */}
+        {type === 'MONEY' && (
+          <div className="payInfoBox" style={{ margin: '4px 0 16px', padding: 16, borderRadius: 12, background: 'var(--surface-2, #f4f6f5)', fontSize: 14, lineHeight: 1.7 }}>
+            <strong>Paga con cualquier billetera digital o transferencia</strong>
+            {NOSXOTROS_PAY.accounts.map((a) => (
+              <div key={a.number}>
+                <div>Cuenta: <strong>{NOSXOTROS_PAY.bankName} {a.number}</strong></div>
+                <div>CCI: <strong>{a.cci}</strong></div>
+              </div>
+            ))}
+            <div>Titular: {NOSXOTROS_PAY.accountHolder}</div>
+            <div style={{ marginTop: 12, textAlign: 'center' }}>
+              <div style={{ display: 'inline-block', padding: 8, background: '#fff', borderRadius: 12 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={NOSXOTROS_PAY.qrImageUrl}
+                  alt={`QR de pago BBVA de ${NOSXOTROS_PAY.accountHolder}: escanéalo con cualquier billetera digital`}
+                  style={{ width: 220, maxWidth: '100%', height: 'auto', objectFit: 'contain', borderRadius: 8 }}
+                />
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                Escanea el QR y paga con cualquier billetera digital (Yape, Plin, app de tu banco)
+                {amount ? ` · ${formatSoles(Number(amount))}` : ''}
               </div>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {type === 'MONEY' && (
           <div className="field">

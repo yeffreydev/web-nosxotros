@@ -239,6 +239,9 @@ export interface CenterLite {
   lat?: number | null;
   lng?: number | null;
   status?: 'OPEN' | 'NEAR_FULL' | 'FULL' | 'CLOSED';
+  // Almacén central que además acopia. (El central que no acopia es bodega
+  // interna: el backend no lo devuelve en los endpoints públicos.)
+  isCentral?: boolean;
 }
 
 export function getCenters(): Promise<CenterLite[]> {

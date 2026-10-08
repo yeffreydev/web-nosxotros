@@ -21,7 +21,10 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
     <Link href={`/campanas/${campaign.slug}`} className="card">
       <div className="cardCover">
         <span className="cardCoverImg" style={{ backgroundImage: `url(${cover.url})` }} aria-hidden="true" />
-        <span className="badge badgeOnCover badgeGlass" style={{ left: 10 }}>
+        <span
+          className="badge badgeOnCover badgeGlass"
+          style={{ left: 10, maxWidth: campaign.featured ? '52%' : 'calc(100% - 20px)' }}
+        >
           <Icon name={cat.icon} size={13} /> {cat.label}
         </span>
         {campaign.featured && (

@@ -21,7 +21,7 @@ export function SiteHeader() {
       <div className="container siteHeaderInner">
         <Link href="/" aria-label="NOSXOTROS inicio" onClick={() => setOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/nosxotros_logo_white.svg" alt="NOSXOTROS" className="siteLogo" />
+          <img src="/nosxotros_logo_white.svg" alt="NOSXOTROS" className="siteLogo" width={127} height={30} />
         </Link>
 
         {/* Navegación escritorio */}

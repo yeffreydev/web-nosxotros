@@ -186,7 +186,7 @@ export default async function CampaignDetailPage({ params }: Params) {
           </div>
           {goals?.volunteers.goal ? (
             <div style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.9375rem', marginBottom: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '2px 12px', fontSize: '.9375rem', marginBottom: 4 }}>
                 <span>{goals.volunteers.enrolled} de {goals.volunteers.goal} personas</span>
                 <span style={{ color: 'var(--text-muted)' }}>
                   faltan {Math.max(0, goals.volunteers.goal - goals.volunteers.enrolled)}
@@ -212,7 +212,7 @@ export default async function CampaignDetailPage({ params }: Params) {
           <div className="block">
             {[...pending, ...covered].map((n) => (
               <div key={n.id} style={{ marginBottom: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '.9375rem', marginBottom: 4 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '2px 12px', fontSize: '.9375rem', marginBottom: 4 }}>
                   <span style={{ fontWeight: 700 }}>
                     {n.category?.icon ? `${n.category.icon} ` : ''}{n.title}
                   </span>

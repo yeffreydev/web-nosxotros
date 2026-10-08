@@ -630,7 +630,7 @@ export function DonateForm({
         {/* Datos de pago de NOSXOTROS: iguales en todas las campañas. El dinero
             entra a la asociación y ella lo transfiere a cada campaña. */}
         {type === 'MONEY' && (
-          <div className="payInfoBox" style={{ margin: '4px 0 16px', padding: 16, borderRadius: 12, background: 'var(--surface-2, #f4f6f5)', fontSize: 14, lineHeight: 1.7 }}>
+          <div className="payInfoBox" style={{ margin: '4px 0 16px', lineHeight: 1.7 }}>
             <strong>Paga con cualquier billetera digital o transferencia</strong>
             {NOSXOTROS_PAY.accounts.map((a) => (
               <div key={a.number}>
@@ -648,7 +648,7 @@ export function DonateForm({
                   style={{ width: 220, maxWidth: '100%', height: 'auto', objectFit: 'contain', borderRadius: 8 }}
                 />
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+              <div className="payInfoCaption" style={{ marginTop: 6 }}>
                 Escanea el QR y paga con cualquier billetera digital (Yape, Plin, app de tu banco)
                 {amount ? ` · ${formatSoles(Number(amount))}` : ''}
               </div>

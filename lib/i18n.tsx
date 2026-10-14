@@ -18,14 +18,14 @@ export const LOCALES: { value: Locale; native: string }[] = [
 type Dict = Record<string, string>;
 
 const es: Dict = {
-  'nav.campaigns': 'Campañas',
+  'nav.campaigns': 'Iniciativas',
   'nav.donate': 'Donar',
   'nav.myDonation': 'Mi donación',
   'nav.report': 'Reportar emergencia',
-  'nav.startCampaign': 'Iniciar campaña',
+  'nav.startCampaign': 'Lanzar iniciativa',
   'nav.language': 'Idioma',
 
-  'donate.titleCampaign': 'Apoyar esta campaña',
+  'donate.titleCampaign': 'Apoyar esta iniciativa',
   'donate.titleGeneral': 'Hacer una donación',
   'donate.leadGeneral': 'Sin registrarte. Recibirás un código para seguir tu donación.',
   'donate.type': 'Tipo de donación',
@@ -44,7 +44,7 @@ const es: Dict = {
   'donate.anyWhereNeeded': 'Donde más se necesite',
   'donate.centerOptional': 'Centro de acopio (opcional)',
   'donate.noPreference': 'Sin preferencia',
-  'donate.payInfo': 'Datos de pago de la campaña',
+  'donate.payInfo': 'Datos de pago de la iniciativa',
   'donate.anonymous': 'Donar de forma anónima',
   'donate.nameOptional': 'Nombre (opcional)',
   'donate.emailOptional': 'Correo (opcional)',
@@ -70,14 +70,14 @@ const es: Dict = {
 };
 
 const en: Dict = {
-  'nav.campaigns': 'Campaigns',
+  'nav.campaigns': 'Initiatives',
   'nav.donate': 'Donate',
   'nav.myDonation': 'My donation',
   'nav.report': 'Report emergency',
-  'nav.startCampaign': 'Start a campaign',
+  'nav.startCampaign': 'Launch an initiative',
   'nav.language': 'Language',
 
-  'donate.titleCampaign': 'Support this campaign',
+  'donate.titleCampaign': 'Support this initiative',
   'donate.titleGeneral': 'Make a donation',
   'donate.leadGeneral': 'No sign-up. You will get a code to track your donation.',
   'donate.type': 'Donation type',
@@ -96,7 +96,7 @@ const en: Dict = {
   'donate.anyWhereNeeded': 'Where most needed',
   'donate.centerOptional': 'Collection center (optional)',
   'donate.noPreference': 'No preference',
-  'donate.payInfo': "Campaign's payment details",
+  'donate.payInfo': "Initiative's payment details",
   'donate.anonymous': 'Donate anonymously',
   'donate.nameOptional': 'Name (optional)',
   'donate.emailOptional': 'Email (optional)',

@@ -6,42 +6,54 @@ import { coverFor, PHOTO } from '@/lib/covers';
 import { CampaignCard } from '@/components/CampaignCard';
 import { HeroStartCampaignCard } from '@/components/HeroStartCampaignCard';
 import { Icon } from '@/components/Icon';
+import { TraceSeal } from '@/components/ImpactMeters';
+import type { Campaign } from '@/lib/types';
 
+// Lo que muestra cada foto de la galería: el impacto más concreto que haya.
+function galleryImpact(c: Campaign): string {
+  const im = c.impact;
+  if (im?.familiesServed) return `${formatNumber(im.familiesServed)} familias atendidas`;
+  if (im?.goodsCollected) return `${formatNumber(im.goodsCollected)} insumos acopiados`;
+  if (im?.volunteers) return `${formatNumber(im.volunteers)} voluntarios inscritos`;
+  return `${formatSoles(c.raisedAmount)} recaudados`;
+}
+
+// Ciclo operativo de una iniciativa: la colecta es solo una parte.
 const GUIDE = [
-  { icon: 'userPlus', title: 'Regístrate como organizador', body: 'Crea tu cuenta gratis y activa tu perfil.' },
-  { icon: 'target', title: 'Define tu meta', body: 'Título claro, categoría y cuánto necesitas recaudar.' },
-  { icon: 'penLine', title: 'Cuenta tu historia', body: 'Explica a quién ayudas y agrega una portada.' },
-  { icon: 'megaphone', title: 'Publica y comparte', body: 'Difunde el enlace por WhatsApp y redes.' },
-  { icon: 'bell', title: 'Publica avances', body: 'Mantén informados a tus donantes.' },
-  { icon: 'trophy', title: 'Alcanza tu meta', body: 'Sigue el progreso con trazabilidad total.' },
+  { icon: 'rocket', title: 'Activa tu iniciativa o respuesta', body: 'Configura la causa social o emergencia en minutos.' },
+  { icon: 'target', title: 'Define tus necesidades operativas', body: 'Especifica requerimientos monetarios, insumos/especies para almacén y perfiles de voluntariado necesarios.' },
+  { icon: 'gift', title: 'Habilita centros de acopio y brigadas', body: 'Administra el inventario de bienes recibidos y asigna turnos de voluntariado en campo.' },
+  { icon: 'megaphone', title: 'Moviliza a la comunidad', body: 'Comparte tu enlace oficial para transparencia e inscripción directa de apoyo.' },
+  { icon: 'trendingUp', title: 'Mide la entrega y el despliegue', body: 'Registra la distribución de insumos y el impacto real en las comunidades.' },
+  { icon: 'shieldCheck', title: 'Rinde cuentas de principio a fin', body: 'Genera reportes automáticos de trazabilidad para donantes y aliados.' },
 ];
 
-// Las tres formas de aportar, con la foto de lo que realmente pasa con cada una.
-// El destino se arma con una campaña real: /donar sin campaña rebota al listado.
+// Modos de participación, con la foto de lo que realmente pasa con cada uno.
+// El destino se arma con una iniciativa real: /donar sin destino rebota al listado.
 const WAYS = [
   {
     photo: PHOTO.entrega,
-    icon: 'heart',
+    icon: 'coins',
     type: 'MONEY',
-    title: 'Dona dinero',
-    body: 'Transfieres por Yape o banco y el organizador acredita tu aporte. Sigues cada sol con tu código.',
-    cta: 'Donar dinero',
+    title: 'Ayuda económica con rendición de cuentas',
+    body: 'Transfiere directamente y sigue el destino exacto de cada sol registrado en la operación.',
+    cta: 'Aportar fondos',
   },
   {
     photo: PHOTO.ollaComun,
     icon: 'gift',
     type: 'GOODS',
-    title: 'Dona en especie',
-    body: 'Agua, frazadas, alimentos. Eliges el centro de acopio y tu entrega entra al inventario.',
-    cta: 'Donar especies',
+    title: 'Puntos de acopio e inventarios',
+    body: 'Consulta la lista de insumos prioritarios (agua, alimentos, abrigo), elige un centro de acopio y sigue el ingreso de tu donación al inventario.',
+    cta: 'Donar insumos',
   },
   {
     photo: PHOTO.limpieza,
     icon: 'users',
     type: 'TIME',
-    title: 'Dona tu tiempo',
-    body: 'Dejas tus días y horas disponibles. La campaña te suma a sus brigadas y turnos.',
-    cta: 'Ser voluntario',
+    title: 'Voluntariado y brigadas de campo',
+    body: 'Únete a los turnos y brigadas activas según tu disponibilidad horaria.',
+    cta: 'Sumarme como voluntario',
   },
 ];
 
@@ -51,12 +63,15 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const campaigns = (await getCampaigns()) ?? [];
   const active = campaigns.filter((c) => c.status === 'ACTIVE' || c.status === 'FUNDED');
-  // Cifras reales de lo que hay publicado: nada inventado en el hero.
+  // Cifras reales de lo que hay publicado: nada inventado. El dinero es solo
+  // una de las dimensiones; también se cuentan insumos, voluntarios y familias.
+  const sum = (f: (c: (typeof campaigns)[number]) => number) => campaigns.reduce((t, c) => t + (f(c) || 0), 0);
   const totals = {
     campaigns: active.length,
-    raised: campaigns.reduce((sum, c) => sum + (c.raisedAmount ?? 0), 0),
-    backers: campaigns.reduce((sum, c) => sum + (c.backersCount ?? 0), 0),
-    districts: new Set(campaigns.map((c) => c.district).filter(Boolean)).size,
+    raised: sum((c) => c.raisedAmount),
+    goods: sum((c) => c.impact?.goodsCollected ?? 0),
+    volunteers: sum((c) => c.impact?.volunteers ?? 0),
+    families: sum((c) => c.impact?.familiesServed ?? 0),
   };
   // Aportar necesita una campaña destino; si no hay ninguna activa, al listado.
   const destino = active[0];
@@ -78,7 +93,7 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* HERO — foto real bajo la banda verde + tarjeta de inicio de campaña */}
+      {/* HERO — propuesta de valor: gestión integral, no solo colecta */}
       <section className="heroBand">
         <span
           className="heroBandPhoto"
@@ -87,29 +102,34 @@ export default async function HomePage() {
         />
         <div className="heroBandInner">
           <div className="heroCopy">
-            <span className="heroKicker">
-              Hagamos juntos
-              <span className="heroSpark" aria-hidden="true">
-                <Icon name="sparkles" size={30} strokeWidth={2.2} />
-              </span>
+            <span className="heroEyebrow">
+              <Icon name="sparkles" size={15} /> Gestión social y respuesta a emergencias
             </span>
-            <h1 className="heroHeadline">
-              Un <span className="hlGold">Perú</span> que no deja a nadie <span className="hlGold">atrás</span>
+            <h1 className="heroHeadline heroHeadlineLong">
+              Coordina, gestiona y transparenta tu respuesta a <span className="hlGold">emergencias</span> e{' '}
+              <span className="hlGold">iniciativas sociales</span>
             </h1>
             <p className="heroLead">
-              Crea tu campaña, comparte tu causa y recibe aportes en dinero, especies o voluntariado.
-              Cada aporte se sigue de principio a fin con trazabilidad total.
+              Organiza brigadas de voluntariado, administra centros de acopio/almacenes y moviliza
+              donaciones monetarias y en especie con trazabilidad punta a punta, sin necesidad de
+              conocimientos técnicos.
             </p>
             <div className="heroActions">
               <a href="#iniciar" className="btn btnOrange btnLg">
-                Iniciar campaña
+                Lanzar iniciativa
               </a>
               <Link href="/campanas" className="heroPlay">
                 <span className="heroPlayIcon">
                   <Icon name="play" size={18} />
                 </span>
-                Ver campañas
+                Ver iniciativas activas
               </Link>
+            </div>
+            <div className="heroSecondary">
+              <a href="#participar" className="heroJoin">
+                <Icon name="handshake" size={16} /> Sumarme como voluntario o donante
+              </a>
+              <TraceSeal onDark />
             </div>
           </div>
 
@@ -117,23 +137,51 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CIFRAS REALES */}
-      <section className="trustStrip" aria-label="Resumen de la plataforma">
+      {/* REPORTAR EMERGENCIA — acción inmediata, justo debajo del hero */}
+      <section className="alertBanner" aria-labelledby="alertBannerTitle">
+        <span className="alertBannerIcon" aria-hidden="true">
+          <Icon name="alertTriangle" size={26} />
+        </span>
+        <div className="alertBannerBody">
+          <h2 id="alertBannerTitle" className="alertBannerTitle">
+            ¿Detectas una emergencia o necesidad comunitaria?
+          </h2>
+          <p className="alertBannerText">
+            Reporta la situación en 1 minuto sin necesidad de crear cuenta. Conectamos tu alerta con
+            las organizaciones y brigadas locales para canalizar inventario y auxilio inmediato.
+          </p>
+        </div>
+        <div className="alertBannerActions">
+          <Link href="/reportar" className="btn btnGold btnLg">
+            <Icon name="alertTriangle" size={18} /> Reportar emergencia
+          </Link>
+          <Link href="/reportar/seguimiento" className="alertBannerLink">
+            Ya tengo un código
+          </Link>
+        </div>
+      </section>
+
+      {/* CIFRAS REALES — en todas las dimensiones, no solo soles */}
+      <section className="trustStrip trustStrip5" aria-label="Resumen de la plataforma">
         <div className="trustItem">
           <strong>{formatNumber(totals.campaigns)}</strong>
-          <span>campañas activas</span>
+          <span>iniciativas activas</span>
+        </div>
+        <div className="trustItem">
+          <strong>{formatNumber(totals.goods)}</strong>
+          <span>insumos acopiados</span>
+        </div>
+        <div className="trustItem">
+          <strong>{formatNumber(totals.volunteers)}</strong>
+          <span>voluntarios inscritos</span>
+        </div>
+        <div className="trustItem">
+          <strong>{formatNumber(totals.families)}</strong>
+          <span>familias atendidas</span>
         </div>
         <div className="trustItem">
           <strong>{formatSoles(totals.raised)}</strong>
-          <span>recaudados y acreditados</span>
-        </div>
-        <div className="trustItem">
-          <strong>{formatNumber(totals.backers)}</strong>
-          <span>aportes de donantes</span>
-        </div>
-        <div className="trustItem">
-          <strong>{formatNumber(totals.districts || 1)}</strong>
-          <span>distritos atendidos</span>
+          <span>fondos con rendición de cuentas</span>
         </div>
       </section>
 
@@ -142,7 +190,7 @@ export default async function HomePage() {
         <div className="sectionHead">
           <div>
             <div className="eyebrow">Apoya hoy</div>
-            <h2 className="sectionTitle">Campañas activas</h2>
+            <h2 className="sectionTitle">Iniciativas activas</h2>
           </div>
           <Link href="/campanas" className="btn btnGhost">
             Ver todo <Icon name="arrowRight" size={16} />
@@ -150,7 +198,7 @@ export default async function HomePage() {
         </div>
         {active.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>
-            Aún no hay campañas activas.{' '}
+            Aún no hay iniciativas activas.{' '}
             <a href={newCampaignLink()} style={{ color: 'var(--brand-700)', fontWeight: 700 }}>
               Crea la primera.
             </a>
@@ -164,12 +212,12 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* TRES FORMAS DE AYUDAR */}
-      <section className="section">
+      {/* MODOS DE PARTICIPACIÓN */}
+      <section className="section" id="participar">
         <div className="sectionHead">
           <div>
-            <div className="eyebrow">Puedes ayudar hoy</div>
-            <h2 className="sectionTitle">Tres formas de aportar</h2>
+            <div className="eyebrow">Modos de participación</div>
+            <h2 className="sectionTitle">Tres formas de sumarte</h2>
           </div>
         </div>
         <div className="waysGrid">
@@ -191,37 +239,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* REPORTAR EMERGENCIA */}
-      <section className="photoBand">
-        <span
-          className="photoBandImg"
-          style={{ backgroundImage: `url(${PHOTO.inundacion})` }}
-          aria-hidden="true"
-        />
-        <div className="photoBandBody">
-          <div className="eyebrow eyebrowLight">¿Estás viendo una emergencia?</div>
-          <h2 className="photoBandTitle">Repórtala en un minuto, sin crear cuenta</h2>
-          <p className="photoBandText">
-            Cuéntanos qué pasó y dónde. El reporte llega a las organizaciones que responden en tu
-            zona y recibes un código para seguir qué se hizo con él.
-          </p>
-          <div className="photoBandActions">
-            <Link href="/reportar" className="btn btnGold btnLg">
-              <Icon name="alertTriangle" size={18} /> Reportar emergencia
-            </Link>
-            <Link href="/reportar/seguimiento" className="btn btnGhostLight">
-              Ya tengo un código
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CÓMO CREAR (pasos, compacto) */}
+      {/* CÓMO FUNCIONA (ciclo operativo para organizadores) */}
       <section className="section">
         <div className="sectionHead">
           <div>
-            <div className="eyebrow">Paso a paso</div>
-            <h2 className="sectionTitle">Cómo crear tu campaña</h2>
+            <div className="eyebrow">Para organizadores</div>
+            <h2 className="sectionTitle">Cómo funciona: el ciclo operativo</h2>
           </div>
         </div>
         <ol className="stepsRow">
@@ -250,7 +273,7 @@ export default async function HomePage() {
           </Link>
         </div>
         {gallery.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>Pronto verás aquí el impacto de las campañas.</p>
+          <p style={{ color: 'var(--text-muted)' }}>Pronto verás aquí el impacto de las iniciativas.</p>
         ) : (
           <div className="galleryGrid">
             {gallery.map((c, i) => {
@@ -279,7 +302,7 @@ export default async function HomePage() {
                   </span>
                   <span className="galleryTileBody">
                     <strong>{c.title}</strong>
-                    <span>{formatSoles(c.raisedAmount)} recaudados</span>
+                    <span>{galleryImpact(c)}</span>
                   </span>
                 </Link>
               );
@@ -296,10 +319,13 @@ export default async function HomePage() {
           aria-hidden="true"
         />
         <div className="ctaBandBody">
-          <h2 className="ctaTitle">¿Tienes una idea que merece crecer?</h2>
-          <p className="ctaSub">Crea tu campaña hoy. Es gratis y toma minutos.</p>
+          <h2 className="ctaTitle">¿Lideras una respuesta o iniciativa social?</h2>
+          <p className="ctaSub">
+            Lánzala hoy: fondos, acopio, voluntariado y rendición de cuentas en un solo lugar. Es
+            gratis y toma minutos.
+          </p>
           <a href={newCampaignLink()} className="btn btnGold btnLg">
-            <Icon name="rocket" size={18} /> Iniciar campaña
+            <Icon name="rocket" size={18} /> Lanzar iniciativa
           </a>
         </div>
       </section>

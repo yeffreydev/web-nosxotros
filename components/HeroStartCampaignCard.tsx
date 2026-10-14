@@ -20,7 +20,7 @@ export function HeroStartCampaignCard() {
 
   return (
     <div className="donateCard" id="iniciar">
-      <div className="donateCardHead">Inicia tu campaña</div>
+      <div className="donateCardHead">Lanza tu iniciativa</div>
 
       {/* Manos unidas: la foto dice lo mismo que la marca (nos x otros).
           Unsplash, licencia libre — /public/hero-campana.jpg */}
@@ -62,19 +62,19 @@ export function HeroStartCampaignCard() {
 
         <div>
           <label className="donateLabel" htmlFor="heroTitle">
-            ¿Qué campaña quieres crear?
+            ¿Qué iniciativa quieres crear?
           </label>
           <input
             id="heroTitle"
             className="donateInput"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ej. Techo para 20 familias"
+            placeholder="Ej. Respuesta al friaje en Yura"
           />
         </div>
 
         <a href={href} className="btn btnOrange donateSubmit">
-          Crear campaña
+          Lanzar iniciativa
         </a>
         <p className="donateNote">Sigues en el registro con estos datos ya cargados. Gratis, toma minutos.</p>
       </div>

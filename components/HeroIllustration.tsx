@@ -5,7 +5,7 @@ export function HeroIllustration({ className }: { className?: string }) {
       viewBox="0 0 480 400"
       className={className}
       role="img"
-      aria-label="Ilustración de una campaña creciendo: comunidad, aportes y meta alcanzada"
+      aria-label="Ilustración de una iniciativa creciendo: comunidad, aportes y meta alcanzada"
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>

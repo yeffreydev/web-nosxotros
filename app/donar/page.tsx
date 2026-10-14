@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation';
 import { DonateForm } from '@/components/DonateForm';
 
 export const metadata: Metadata = {
-  title: 'Donar a una campaña',
-  description: 'Apoya una campaña con dinero, especies o voluntariado. Recibe un código para seguir tu aporte.',
+  title: 'Donar a una iniciativa',
+  description: 'Apoya una iniciativa con dinero, especies o voluntariado. Recibe un código para seguir tu aporte.',
   robots: { index: false },
 };
 

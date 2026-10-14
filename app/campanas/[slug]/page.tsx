@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCampaign, getCampaignGoals, getCampaignOperations } from '@/lib/api';
 import { assetUrl } from '@/lib/assets';
-import { coverFor } from '@/lib/covers';
+import { coverFor, galleryFor, initiativeKind } from '@/lib/covers';
 import { SITE_URL } from '@/lib/config';
 import {
   CAMPAIGN_CATEGORY,
@@ -14,6 +14,8 @@ import {
 } from '@/lib/format';
 import { Progress } from '@/components/Progress';
 import { Icon } from '@/components/Icon';
+import { ImpactMeters, TraceSeal } from '@/components/ImpactMeters';
+import { PhotoGallery } from '@/components/PhotoGallery';
 
 type Params = { params: { slug: string } };
 
@@ -22,7 +24,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = await getCampaign(params.slug);
-  if (!c) return { title: 'Campaña no encontrada' };
+  if (!c) return { title: 'Iniciativa no encontrada' };
   const pct = c.progressPct;
   const desc =
     c.goalAmount != null
@@ -30,11 +32,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       : `${c.summary} · ${formatSoles(c.raisedAmount)} recaudados.`;
   // La portada va absoluta y hacia la API real: WhatsApp y Google leen la imagen
   // desde fuera, y una URL a localhost no les sirve para nada.
-  const cover = assetUrl(c.coverPhoto);
+  const cover = galleryFor(c)[0];
   return {
     title: c.title,
     description: desc,
-    keywords: [c.title, CAMPAIGN_CATEGORY[c.category].label, 'donar', 'campaña', c.district ?? 'Arequipa'],
+    keywords: [c.title, CAMPAIGN_CATEGORY[c.category].label, 'donar', 'iniciativa', c.district ?? 'Arequipa'],
     alternates: { canonical: `/campanas/${c.slug}` },
     openGraph: {
       type: 'article',
@@ -83,10 +85,11 @@ export default async function CampaignDetailPage({ params }: Params) {
 
   const cat = CAMPAIGN_CATEGORY[c.category];
   const st = CAMPAIGN_STATUS[c.status];
-  const funded = c.progressPct >= 100 || c.status === 'FUNDED';
   const dleft = daysLeft(c.deadline);
   const closed = ['COMPLETED', 'CANCELLED', 'PAUSED'].includes(c.status);
-  const cover = assetUrl(c.coverPhoto);
+  const gallery = galleryFor(c);
+  const cover = gallery[0];
+  const kind = initiativeKind(c);
   const url = `${SITE_URL}/campanas/${c.slug}`;
 
   // JSON-LD para resultados enriquecidos (SEO).
@@ -96,7 +99,7 @@ export default async function CampaignDetailPage({ params }: Params) {
     name: c.title,
     description: c.summary,
     url,
-    ...(cover ? { image: cover } : {}),
+    ...(gallery.length ? { image: gallery } : {}),
     ...(c.organizer ? { agent: { '@type': 'Person', name: c.organizer.fullName } } : {}),
     ...(c.deadline ? { endTime: c.deadline } : {}),
     recipient: {
@@ -120,47 +123,42 @@ export default async function CampaignDetailPage({ params }: Params) {
 
       <p style={{ margin: '12px 0' }}>
         <a href="/campanas" style={{ color: 'var(--text-muted)' }}>
-          ← Explorar campañas
+          ← Explorar iniciativas
         </a>
       </p>
 
-      <div className="detailHero" style={{ backgroundImage: `url(${coverFor(c).url})` }} />
+      <PhotoGallery photos={gallery.length ? gallery : [coverFor(c).url]} alt={c.title} />
 
       <div className="badges">
+        <span className={`badge kindBadge kindBadge-${kind.key}`}><Icon name={kind.icon} size={13} /> {kind.label}</span>
         <span className="badge"><Icon name={cat.icon} size={13} /> {cat.label}</span>
         <span className={`badge ${TONE_CLASS[st.tone] ?? ''}`}>{st.label}</span>
         {c.featured && <span className="badge badgeGold"><Icon name="star" size={13} /> Destacada</span>}
         {c.district && <span className="badge"><Icon name="mapPin" size={13} /> {c.district}</span>}
+        <TraceSeal />
       </div>
 
       <h1 style={{ fontSize: '2rem', margin: '0 0 8px' }}>{c.title}</h1>
       <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem' }}>{c.summary}</p>
 
-      {/* Progreso + CTA */}
+      {/* Avance en sus tres dimensiones + CTA: la meta en dinero es solo una. */}
       <div className="detailStatCard">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
-          <span className="raised">{formatSoles(c.raisedAmount)}</span>
-          <span style={{ color: 'var(--text-muted)' }}>
-            {c.goalAmount != null ? `de ${formatSoles(c.goalAmount)}` : 'recaudado · sin meta fija'}
-          </span>
+        <div className="detailStatHead">
+          <span>Avance de la iniciativa</span>
+          {dleft != null && c.status === 'ACTIVE' && (
+            <span className="metaInline">
+              <Icon name="clock" size={14} /> {dleft === 0 ? 'Último día' : `${dleft} días restantes`}
+            </span>
+          )}
         </div>
-        {c.goalAmount != null && (
-          <div style={{ margin: '12px 0' }}>
-            <Progress pct={c.progressPct} gold={funded} />
-          </div>
-        )}
-        <div className="statline">
+        <ImpactMeters campaign={c} />
+        <div className="statline" style={{ marginTop: 10 }}>
           <span>
             <strong style={{ color: 'var(--text)' }}>{formatNumber(c.backersCount)}</strong> donantes
           </span>
-          {dleft != null && c.status === 'ACTIVE' && (
-            <span>
-              <strong style={{ color: 'var(--text)' }}>{dleft}</strong> días restantes
-            </span>
-          )}
           {c.goalAmount != null && (
             <span>
-              <strong style={{ color: 'var(--text)' }}>{c.progressPct}%</strong> de la meta
+              <strong style={{ color: 'var(--text)' }}>{c.progressPct}%</strong> de la meta de fondos
             </span>
           )}
         </div>
@@ -169,7 +167,7 @@ export default async function CampaignDetailPage({ params }: Params) {
           className="btn btnGold btnLg"
           style={{ marginTop: 16, width: '100%', justifyContent: 'center', pointerEvents: closed ? 'none' : undefined, opacity: closed ? 0.6 : 1 }}
         >
-          {closed ? st.label : 'Apoyar esta campaña'}
+          {closed ? st.label : 'Apoyar esta iniciativa'}
         </Link>
       </div>
 
@@ -240,7 +238,10 @@ export default async function CampaignDetailPage({ params }: Params) {
           <h2 style={{ fontSize: '1.375rem', marginTop: 32 }}>Dónde llevar tu donación</h2>
           <div className="block">
             {centers.map((ctr) => {
-              const photo = assetUrl(ctr.photoUrl);
+              const photos = (ctr.photos?.length ? ctr.photos : ctr.photoUrl ? [ctr.photoUrl] : [])
+                .map((u) => assetUrl(u))
+                .filter(Boolean);
+              const photo = photos[0];
               return (
                 <div key={ctr.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16 }}>
                   {photo && (
@@ -280,6 +281,16 @@ export default async function CampaignDetailPage({ params }: Params) {
                         <Icon name="mapPin" size={14} /> Cómo llegar
                       </a>
                     )}
+                    {photos.length > 1 && (
+                      <div className="centerThumbs">
+                        {photos.slice(1).map((u, i) => (
+                          <a key={u} href={u} target="_blank" rel="noreferrer noopener" aria-label={`Foto ${i + 2} de ${ctr.name}`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={u} alt="" loading="lazy" width={44} height={44} />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -309,9 +320,9 @@ export default async function CampaignDetailPage({ params }: Params) {
 
       <div className="ctaBand" style={{ marginTop: 40 }}>
         <h2 className="ctaTitle">Suma tu aporte</h2>
-        <p className="ctaSub">Cada sol acerca esta campaña a su meta. Es rápido y trazable.</p>
+        <p className="ctaSub">Cada aporte —fondos, insumos o tu tiempo— acerca esta iniciativa a su meta, con trazabilidad de principio a fin.</p>
         <Link href={`/donar?campaignId=${c.id}&campaign=${encodeURIComponent(c.title)}`} className="btn btnGold btnLg">
-          Apoyar esta campaña
+          Apoyar esta iniciativa
         </Link>
       </div>
     </div>

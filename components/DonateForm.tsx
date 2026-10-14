@@ -168,7 +168,7 @@ export function DonateForm({
     loadCenters.then(setCenters).catch(() => setCenters([]));
     // Los datos de pago no dependen de la campaña: todas las donaciones entran
     // a las cuentas de NOSXOTROS y la asociación desembolsa a cada campaña.
-    if (isCampaign) return; // las campañas son el destino; no se elige emergencia
+    if (isCampaign) return; // las iniciativas son el destino; no se elige emergencia
     getActiveEmergencies()
       .then(setEmergencies)
       .catch(() => setEmergencies([]));
@@ -538,11 +538,11 @@ export function DonateForm({
         )}
 
         {/* Especies: no hay formulario. Solo se listan los centros de acopio de
-            la campaña; el donante lleva las cosas en persona y el centro las
+            la iniciativa; el donante lleva las cosas en persona y el centro las
             registra al recibirlas. */}
         {type === 'GOODS' && (
           <div className="field">
-            <label className="label">Centros de acopio de esta campaña</label>
+            <label className="label">Centros de acopio de esta iniciativa</label>
             <p className="fieldHint">
               Lleva tu donación a cualquiera de estos centros. Ahí la reciben y la registran.
             </p>
@@ -628,7 +628,7 @@ export function DonateForm({
         )}
 
         {/* Datos de pago de NOSXOTROS: iguales en todas las campañas. El dinero
-            entra a la asociación y ella lo transfiere a cada campaña. */}
+            entra a la asociación y ella lo transfiere a cada iniciativa. */}
         {type === 'MONEY' && (
           <div className="payInfoBox" style={{ margin: '4px 0 16px', lineHeight: 1.7 }}>
             <strong>Paga con cualquier billetera digital o transferencia</strong>

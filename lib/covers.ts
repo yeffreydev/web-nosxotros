@@ -45,8 +45,25 @@ export type Cover = {
  * categoría. Nunca devuelve vacío: una tarjeta sin imagen se ve rota y hace que
  * toda la grilla parezca a medio hacer.
  */
-export function coverFor(c: Pick<Campaign, 'coverPhoto' | 'category'>): Cover {
-  const own = assetUrl(c.coverPhoto);
+export function coverFor(c: Pick<Campaign, 'coverPhoto' | 'photos' | 'category'>): Cover {
+  const own = assetUrl(c.photos?.[0] ?? c.coverPhoto);
   if (own) return { url: own, own: true };
   return { url: BY_CATEGORY[c.category] ?? PHOTO.manos, own: false };
+}
+
+/** Galería subida por el organizador (1 a 5), ya resuelta. Vacía si no subió nada. */
+export function galleryFor(c: Pick<Campaign, 'coverPhoto' | 'photos'>): string[] {
+  const list = c.photos?.length ? c.photos : c.coverPhoto ? [c.coverPhoto] : [];
+  return list.map((u) => assetUrl(u)).filter((u): u is string => !!u);
+}
+
+/**
+ * Tipo de iniciativa, para separarlas a simple vista en las tarjetas: una
+ * respuesta a emergencia (friaje, inundación) no se lee igual que un proyecto
+ * de desarrollo o infraestructura social.
+ */
+export function initiativeKind(c: Pick<Campaign, 'category' | 'emergencyId'>) {
+  return c.category === 'EMERGENCY' || !!c.emergencyId
+    ? ({ key: 'emergency', label: 'Respuesta a emergencia', icon: 'alertTriangle' } as const)
+    : ({ key: 'development', label: 'Proyecto de desarrollo', icon: 'handshake' } as const);
 }

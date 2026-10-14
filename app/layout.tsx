@@ -5,21 +5,26 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { I18nProvider } from '@/lib/i18n';
 import { SITE_URL } from '@/lib/config';
 
+const TITLE = 'NOSXOTROS — Gestión de iniciativas sociales y emergencias';
+const DESC =
+  'Coordina, gestiona y transparenta tu respuesta a emergencias e iniciativas sociales: brigadas de voluntariado, centros de acopio y donaciones con trazabilidad punta a punta.';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'NOSXOTROS — Crea tu campaña y hazla crecer',
+    default: TITLE,
     template: '%s · NOSXOTROS',
   },
-  description:
-    'Crea tu campaña, comparte tu causa y recibe aportes con trazabilidad total. Convierte tu idea en una campaña que crece.',
+  description: DESC,
   keywords: [
-    'campañas',
-    'crowdfunding',
+    'iniciativas sociales',
+    'respuesta a emergencias',
+    'centros de acopio',
+    'voluntariado',
+    'brigadas',
     'donaciones',
-    'Arequipa',
-    'recaudar fondos',
-    'organizador de campañas',
+    'trazabilidad',
+    'Perú',
     'NOSXOTROS',
   ],
   applicationName: 'NOSXOTROS',
@@ -28,14 +33,13 @@ export const metadata: Metadata = {
     locale: 'es_PE',
     siteName: 'NOSXOTROS',
     url: SITE_URL,
-    title: 'NOSXOTROS — Crea tu campaña y hazla crecer',
-    description:
-      'Lanza tu campaña, comparte tu causa y recibe aportes con trazabilidad total.',
+    title: TITLE,
+    description: DESC,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NOSXOTROS — Crea tu campaña y hazla crecer',
-    description: 'Convierte tu idea en una campaña que crece.',
+    title: TITLE,
+    description: DESC,
   },
   robots: { index: true, follow: true },
 };
@@ -51,6 +55,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body>
         <I18nProvider>
+        <div className="topTagline">
+          <div className="container">
+            Plataforma de gestión integral, logística y transparencia para iniciativas sociales y emergencias
+          </div>
+        </div>
         <SiteHeader />
         <main className="container">{children}</main>
         <footer className="footer">
@@ -58,9 +67,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="footerBrand">
               NOS<span>X</span>OTROS
             </div>
-            <p>Respuesta social en tiempo real · Arequipa, Perú</p>
+            <p>Gestión integral, logística y transparencia para iniciativas sociales y emergencias · Perú</p>
             <p>
-              <Link href="/campanas">Campañas</Link> · <Link href="/creditos">Créditos de fotos</Link> ·{' '}
+              <Link href="/campanas">Iniciativas</Link> · <Link href="/creditos">Créditos de fotos</Link> ·{' '}
               © 2026 NOSXOTROS
             </p>
           </div>

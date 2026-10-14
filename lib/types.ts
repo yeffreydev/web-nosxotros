@@ -40,6 +40,15 @@ export interface CampaignRecentDonor {
   createdAt: string;
 }
 
+export interface CampaignImpact {
+  /** Suma de metas en especie (unidades) y lo ya acopiado contra ellas. */
+  goodsTarget: number;
+  goodsCollected: number;
+  volunteers: number;
+  volunteerGoal?: number | null;
+  familiesServed: number;
+}
+
 export interface Campaign {
   id: string;
   slug: string;
@@ -49,6 +58,8 @@ export interface Campaign {
   category: CampaignCategory;
   status: CampaignStatus;
   coverPhoto?: string;
+  /** Galería de portada (1 a 5). La primera = coverPhoto. */
+  photos?: string[];
   goalAmount?: number | null;
   raisedAmount: number;
   volunteerSkills?: string[];
@@ -62,6 +73,10 @@ export interface Campaign {
   address?: string;
   mapUrl?: string;
   featured: boolean;
+  /** Emergencia de origen: la iniciativa es una respuesta a emergencia. */
+  emergencyId?: string | null;
+  /** Avance operativo (no monetario): insumos, voluntarios, familias. */
+  impact?: CampaignImpact;
   organizerId: string;
   organizer?: CampaignOrganizer;
   updates?: CampaignUpdate[];
@@ -115,6 +130,8 @@ export interface Center {
   mapUrl?: string;
   /** Foto del local: sirve para reconocerlo al llegar. */
   photoUrl?: string;
+  /** Galería del local (1 a 5). La primera = photoUrl. */
+  photos?: string[];
   status: 'OPEN' | 'NEAR_FULL' | 'FULL' | 'CLOSED';
   /** Almacén central que además acopia (el interno no llega al público). */
   isCentral?: boolean;

@@ -1965,3 +1965,304 @@ select.control option {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =====================================================================
+   Gestión integral (no solo colecta): tagline, hero, alerta, métricas
+   ===================================================================== */
+
+/* Micro-tagline institucional, siempre visible sobre el header. */
+.topTagline {
+  background: #06200f;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  text-align: center;
+  padding: 6px 0;
+}
+
+.heroEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-bottom: 16px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--gold-400);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* El titular operativo es más largo que el anterior: baja la escala. */
+.heroHeadline.heroHeadlineLong {
+  font-size: clamp(1.75rem, 4.6vw, 2.9rem);
+  line-height: 1.1;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+.heroSecondary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-top: 22px;
+}
+.heroJoin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+  text-underline-offset: 4px;
+}
+.heroJoin:hover {
+  text-decoration-color: var(--gold-400);
+}
+
+/* Sello de trazabilidad: reduce fricción y genera confianza. */
+.traceSeal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--brand-700);
+  background: var(--brand-50);
+  border: 1px solid var(--brand-300);
+  white-space: nowrap;
+}
+.traceSealDark {
+  color: #d9f7d8;
+  background: rgba(60, 193, 57, 0.18);
+  border-color: rgba(116, 216, 113, 0.55);
+}
+
+/* Reporte de emergencias: acción inmediata, justo debajo del hero. */
+.alertBanner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px 16px;
+  align-items: center;
+  margin: 28px 0 0;
+  padding: 20px;
+  border-radius: 4px;
+  background: #fff4ef;
+  border: 1px solid #ffd3c2;
+  border-left: 5px solid var(--danger-500);
+}
+.alertBannerIcon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--danger-500);
+  color: #fff;
+  align-self: start;
+}
+.alertBannerTitle {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+.alertBannerText {
+  margin: 0;
+  color: var(--ink-500);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.alertBannerActions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+.alertBannerLink {
+  font-weight: 700;
+  color: var(--ink-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (min-width: 860px) {
+  .alertBanner {
+    grid-template-columns: auto 1fr auto;
+    padding: 22px 26px;
+  }
+  .alertBannerActions {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+}
+
+/* Cifras en cinco dimensiones. */
+@media (min-width: 720px) {
+  .trustStrip.trustStrip5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Tipo de iniciativa (tarjetas y detalle). */
+.kindBadge {
+  border: 0;
+}
+.kindBadge-emergency {
+  background: var(--danger-500);
+  color: #fff;
+}
+.kindBadge-development {
+  background: var(--info-500);
+  color: #fff;
+}
+.cardPhotoCount {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+}
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Avance multipropósito: fondos, insumos, voluntarios. */
+.impactMeters {
+  display: grid;
+  gap: 12px;
+}
+.impactMetersCompact {
+  gap: 9px;
+}
+.impactMeterHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 10px;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+.impactMetersCompact .impactMeterHead {
+  font-size: 0.8rem;
+}
+.impactMeterLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+.impactMeterValue {
+  color: var(--text-muted);
+}
+.progressThin {
+  height: 6px;
+}
+.impactFill-money {
+  background: var(--brand-600);
+}
+.impactFill-goods {
+  background: var(--gold-500);
+}
+.impactFill-volunteers {
+  background: var(--info-500);
+}
+.impactFamilies {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: var(--brand-700);
+}
+.detailStatHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 12px;
+  margin-bottom: 14px;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+/* Galería de la portada (1 a 5 fotos). */
+.photoGallery .detailHero {
+  margin-bottom: 8px;
+}
+.photoGalleryThumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+}
+.photoGalleryThumb {
+  flex: none;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.photoGalleryThumb img {
+  display: block;
+  width: 76px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.photoGalleryThumb:hover,
+.photoGalleryThumbOn {
+  opacity: 1;
+}
+.photoGalleryThumbOn {
+  border-color: var(--brand-600);
+}
+.centerThumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.centerThumbs img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* Seis pasos del ciclo operativo: 3 + 3 en escritorio, sin huérfanos. */
+@media (min-width: 900px) {
+  .stepsRow {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 719px) {
+  .trustStrip.trustStrip5 .trustItem:last-child {
+    grid-column: 1 / -1;
+  }
+}
